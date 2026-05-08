@@ -79,7 +79,9 @@ Act as a QA engineer:
 
 After QA completes and the user has responded to the archive prompt:
 
-- If more milestones remain in the queue: announce **"Moving to next milestone: [Name]"** and return to Step 3.
+- If more milestones remain in the queue:
+  1. Run `/clear` to reset conversation context before starting the next milestone. This prevents context from one milestone bleeding into the next.
+  2. Announce **"Moving to next milestone: [Name]"** and return to Step 3.
 - If queue is empty: deliver the grind summary (see Step 6).
 
 ---
