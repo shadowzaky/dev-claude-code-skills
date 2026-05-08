@@ -1,0 +1,8 @@
+{
+  "name": "claude-code-skills",
+  "description": "Team shared Claude Code skills and commands",
+  "author": {
+    "name": "Team"
+  },
+  "hooks": {}
+}

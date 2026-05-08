@@ -1,0 +1,13 @@
+{
+  "name": "claude-code-skills",
+  "version": "1.0.0",
+  "description": "Team shared Claude Code skills, commands, and hooks",
+  "private": true,
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js",
+    "uninstall": "node scripts/uninstall.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
