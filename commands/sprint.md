@@ -4,6 +4,15 @@ This command orchestrates three skills in strict sequence. Each phase must fully
 
 ---
 
+## Phase 0 — Preflight check
+
+Before starting, verify:
+- `ARCHITECTURE.md` exists in the project root. If not: **stop** — tell the user:
+  > No `ARCHITECTURE.md` found. Run `/architecture` to document the project architecture first, then re-run `/sprint`.
+- `MILESTONES.md` may or may not exist — PM phase will create or update it.
+
+---
+
 ## Phase 1 — Product Manager: Define the milestone
 
 Invoke the `milestones` skill now.
@@ -38,8 +47,9 @@ Act as a senior developer. Implement the active milestone end-to-end:
 6. Write unit tests and integration tests following `ARCHITECTURE.md` conventions.
 7. Run linter and full test suite — all must pass.
 8. Do NOT mark the milestone complete or remove `[ACTIVE]`.
-9. Report implementation summary to the user and ask: **"Dev work is done and all tests pass. Ready to hand off to QA?"**
-10. Wait for explicit user confirmation before continuing.
+9. Optionally run `/review-branch` for a deeper pre-QA code review before handoff.
+10. Report implementation summary to the user and ask: **"Dev work is done and all tests pass. Ready to hand off to QA?"**
+11. Wait for explicit user confirmation before continuing.
 
 ---
 

@@ -9,7 +9,8 @@ No PM phase. Milestones must already exist in MILESTONES.md. This command grinds
 Read `MILESTONES.md`. If not found at the root, also check `doc/milestones.md`. Use whichever exists; if both exist, prefer the root one.
 
 - If file does not exist in either location or has no milestones: **stop** — tell the user to run `/milestones` or `/sprint` to define milestones first.
-- If `ARCHITECTURE.md` does not exist: **stop** — tell the user architecture must be documented before any dev work begins.
+- If `ARCHITECTURE.md` does not exist: **stop** — tell the user:
+  > No `ARCHITECTURE.md` found. Run `/architecture` to document the project architecture first, then re-run `/grind`.
 - Build a list of all milestones that are NOT marked `[COMPLETED]`. These are the work queue.
 - If the queue is empty (all milestones already `[COMPLETED]`): **stop** — tell the user everything is done, suggest archiving with `/qa`.
 - Present the queue to the user:
@@ -107,6 +108,7 @@ All milestones complete. Repository is clean.
 ## Pipeline rules
 
 - **No auto-advance past the dev plan gate** — user must approve the implementation plan for each milestone before coding starts.
+- **Dev → QA gate is intentionally absent** — unlike `/sprint` (which requires explicit user confirmation between dev and QA), grind proceeds directly from dev to QA for each milestone. This is by design: grind is a batch mode for processing a known queue with minimal interruption. Use `/sprint` when you want interactive sign-off between phases.
 - **QA ambiguity always blocks** — never assume a business rule; always ask.
 - **No milestone skipping** — if a milestone is blocked (missing impl, failing tests), stop the whole grind and wait for the user to resolve it. Do not skip to the next one.
 - **Stop/pause respected** — if the user says "stop", "pause", or "hold" at any point: stop immediately and report which milestone was in progress and what phase it was in. Resume with `/grind` and it will re-read the queue and continue from the next incomplete milestone.

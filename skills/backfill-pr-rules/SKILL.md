@@ -43,10 +43,11 @@ Merge both lists, deduplicate, and report: "Processing PRs: #1, #2, #3..."
 Read all of these files if they exist:
 - `ARCHITECTURE.md`
 - `CLAUDE.md`
+- `BUSINESS_RULES.md`
 - `~/.claude/skills/dev/SKILL.md`
 - `~/.claude/commands/review-branch.md`
 
-Note the existing rules in each so you do not add duplicates later.
+Note the existing rules in each so you do not add duplicates later. Check `BUSINESS_RULES.md` before writing any code rule — do not create a rule that contradicts a documented business rule; if a conflict is found, ask the user to resolve it.
 
 ---
 

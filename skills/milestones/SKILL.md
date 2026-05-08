@@ -39,10 +39,11 @@ You are acting as a product manager. Manage the `MILESTONES.md` file in the curr
 
 1. **No ordering** — milestones have no numbers or sequence. Any can be done in any order.
 2. **One ACTIVE at a time** — exactly one milestone may be marked `[ACTIVE]`. If none is active, no marker appears. If the user sets a new one active, remove `[ACTIVE]` from any previous.
-3. **Acceptance criteria** — each milestone must have at least two acceptance criteria. They must be specific, testable, and describe user-visible or system-observable outcomes. No vague criteria like "works correctly".
-4. **Tasks** — a checklist of concrete development tasks. Checkboxes are checked (`[x]`) by other skills (dev workflow). Do NOT check tasks yourself unless the user explicitly says a task is done.
-5. **Preserve existing state** — when updating, never uncheck already-checked boxes, never remove completed tasks or met criteria.
-6. **File location** — always `MILESTONES.md` at the root of the current working directory.
+3. **COMPLETED marker** — when QA fully validates a milestone it changes `[ACTIVE]` → `[COMPLETED]`. Do not add `[COMPLETED]` yourself. Do not remove it once set. A completed milestone may be archived to `milestones-archived.md` by QA at the user's request.
+4. **Acceptance criteria** — each milestone must have at least two acceptance criteria. They must be specific, testable, and describe user-visible or system-observable outcomes. No vague criteria like "works correctly".
+5. **Tasks** — a checklist of concrete development tasks. Checkboxes are checked (`[x]`) by other skills (dev workflow). Do NOT check tasks yourself unless the user explicitly says a task is done.
+6. **Preserve existing state** — when updating, never uncheck already-checked boxes, never remove completed tasks or met criteria.
+7. **File location** — always `MILESTONES.md` at the root of the current working directory.
 
 ## Operations
 

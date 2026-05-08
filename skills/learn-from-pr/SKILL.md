@@ -45,17 +45,18 @@ Collect all comments (fetched + pasted) into a single list before proceeding.
 
 ## Step 2 — Read project context
 
-Read both files if they exist:
+Read all of these files if they exist:
 - `ARCHITECTURE.md`
 - `CLAUDE.md`
+- `BUSINESS_RULES.md`
 
-If neither exists, tell the user and continue — new sections will be created when writing.
+If none exist, tell the user and continue — new sections will be created when writing.
 
 Also read:
 - `~/.claude/skills/dev/SKILL.md`
 - `~/.claude/commands/review-branch.md`
 
-These are the user-level targets for generic rules.
+These are the user-level targets for generic rules. Note the existing rules in each file so you do not add duplicates.
 
 ---
 
@@ -95,6 +96,8 @@ Wait for response before continuing to the next ambiguous comment.
 
 For each classified comment, write the rule in the appropriate file(s).
 
+**Before writing any rule:** check if an equivalent rule already exists in the target file (you read these in Step 2). If it does, skip it. If the existing rule is weaker or less precise, replace it with the better version and note the upgrade. Also check `BUSINESS_RULES.md` — do not add a code rule that contradicts a documented business rule; resolve the contradiction by asking the user.
+
 ### Project-level rules
 
 **CLAUDE.md** — add under the most relevant existing section, or create a new `## Rules` or `## Conventions` section. Write the rule as a short imperative bullet: "Always X", "Never Y", "Use Z for W".
@@ -107,7 +110,7 @@ For each classified comment, write the rule in the appropriate file(s).
 
 **`~/.claude/commands/review-branch.md`** — find the matching review dimension (A–K). Add the rule as a bullet under the correct dimension. If the rule introduces a new dimension not covered, add it as a new `### L. <Name>` section before Step 5.
 
-For each file written, tell the user exactly what was added and where.
+For each file written, tell the user exactly what was added, upgraded, or skipped.
 
 ---
 

@@ -142,6 +142,7 @@ Before declaring dev work complete:
 3. If the project has an OpenAPI spec, verify new or changed endpoints are reflected in it.
 4. Read `MILESTONES.md` — confirm every task checkbox is checked `[x]`.
 5. Confirm the milestone is still marked `[ACTIVE]` — do NOT remove `[ACTIVE]` or add any "complete" marker. That is the QA skill's job.
+6. Run `/review-branch` for a deeper review of all branch changes against `ARCHITECTURE.md` standards before handing off to QA. Resolve any issues found.
 
 Report to the user:
 - Summary of what was implemented

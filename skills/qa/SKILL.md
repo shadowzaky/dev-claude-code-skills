@@ -25,7 +25,8 @@ Read `MILESTONES.md`.
 - If any tasks are **unchecked**: **stop** — report which tasks are incomplete and tell the user to finish dev (`/dev`) before QA runs.
 
 ### 1b. Check ARCHITECTURE.md
-Read `ARCHITECTURE.md`. If it does not exist: **stop** — tell the user architecture must be documented before QA can validate against it.
+Read `ARCHITECTURE.md`. If it does not exist: **stop** — tell the user:
+> No `ARCHITECTURE.md` found. Run `/architecture` to document the project architecture, then re-run `/qa`.
 
 ### 1c. Check BUSINESS_RULES.md
 Look for `BUSINESS_RULES.md` in the project root.
