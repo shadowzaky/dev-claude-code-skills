@@ -37,7 +37,24 @@ if (fs.existsSync(commandsSrc) && fs.existsSync(commandsDest)) {
   }
 }
 
-// 2. Remove from installed_plugins.json
+// 2. Remove skills this package installed, per the manifest
+const manifestPath = path.join(claudeDir, '.claude-code-skills.json');
+const manifest = readJson(manifestPath);
+const skillsDest = path.join(claudeDir, 'skills');
+
+for (const name of manifest?.skills || []) {
+  const dir = path.join(skillsDest, name);
+  if (fs.existsSync(dir)) {
+    fs.rmSync(dir, { recursive: true, force: true });
+    console.log(`  [skill]   removed ${name}`);
+  }
+}
+
+if (fs.existsSync(manifestPath)) {
+  fs.unlinkSync(manifestPath);
+}
+
+// 3. Remove from installed_plugins.json
 const installedPluginsPath = path.join(claudeDir, 'plugins', 'installed_plugins.json');
 const installedPlugins = readJson(installedPluginsPath);
 if (installedPlugins?.plugins?.[PLUGIN_ID]) {
@@ -46,7 +63,7 @@ if (installedPlugins?.plugins?.[PLUGIN_ID]) {
   console.log(`  [plugin]  unregistered ${PLUGIN_ID}`);
 }
 
-// 3. Disable in settings.json
+// 4. Disable in settings.json
 const settingsPath = path.join(claudeDir, 'settings.json');
 const settings = readJson(settingsPath);
 if (settings?.enabledPlugins?.[PLUGIN_ID] !== undefined) {
