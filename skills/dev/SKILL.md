@@ -37,6 +37,7 @@ Look for `ARCHITECTURE.md` in the project root.
   > Once `ARCHITECTURE.md` exists, re-run `/dev` to continue.
 
 - If it exists: read it fully. All implementation decisions must conform to it.
+- If `docs/adr/` exists, read the `Accepted` ADRs too — they are binding, and they explain *why* the rules are what they are. If a task cannot be implemented without violating an accepted ADR, **stop** and tell the user: the ADR must be superseded via `/adr-create` and `/adr-review` first, not worked around in code.
 
 ### 1c. Read the active milestone
 Extract from `MILESTONES.md`:

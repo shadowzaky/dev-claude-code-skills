@@ -48,6 +48,13 @@ Review every changed file against every dimension below. Do not skip dimensions 
 - Does error handling match the response shape defined in `ARCHITECTURE.md`?
 - Flag every deviation with the specific `ARCHITECTURE.md` rule it violates.
 
+**Accepted ADRs**
+
+If `docs/adr/` exists, read every `Accepted` ADR before reviewing the diff.
+
+- Does any change violate an accepted decision? Cite the ADR number — `[BLOCKER]`, because working around a recorded decision in code silently invalidates the record.
+- Does the branch make a new significant decision (new persistence layer, new external dependency, new auth path, reversed structural choice) with no ADR behind it? Flag as `[CONCERN]` and recommend `/adr-create`.
+
 ---
 
 ### B. Clean Architecture & SOLID
