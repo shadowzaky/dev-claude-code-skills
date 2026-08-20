@@ -37,7 +37,7 @@ reviewer knows to look.
 ### BR-005: A flavor provides every contract section
 **Rule:** Every `flavor-<name>` skill contains all six sections — Activation, Milestone criteria, Dev standards, QA checks, Review dimensions, Architecture extensions. A section may be thin; none may be absent.
 **Rationale:** Each section has exactly one consuming skill. A missing one leaves that skill nothing to apply, and the omission is invisible at the point of use.
-**Validated by:** `scripts/validate.js` — flavor section check. Negative-tested: renaming `## QA checks` fails the run.
+**Validated by:** `scripts/validate.js` — flavor section check, **for flavors in this repository only**. Negative-tested: renaming `## QA checks` fails the run. Under ADR-0003 flavors may ship as separate plugins; for any flavor outside this repo the rule is **manual** until the contract ships as a runnable check.
 
 ### BR-006: A flavor cannot remove a core gate
 **Rule:** No flavor may let dev close a milestone, skip QA rule discovery, or make `ARCHITECTURE.md` optional. Flavors add; they never subtract.

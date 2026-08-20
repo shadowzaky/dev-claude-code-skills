@@ -32,7 +32,7 @@ const FLAVOR_REQUIRED_SECTIONS = [
 // Slash commands provided by Claude Code itself — referencing these is not a broken link.
 const BUILTIN_COMMANDS = new Set([
   'clear', 'compact', 'config', 'cost', 'doctor', 'help', 'init', 'login',
-  'logout', 'memory', 'model', 'resume', 'review', 'vim',
+  'logout', 'memory', 'model', 'plugin', 'reload-plugins', 'resume', 'review', 'vim',
 ]);
 
 const errors = [];

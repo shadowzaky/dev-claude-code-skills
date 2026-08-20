@@ -1,7 +1,8 @@
 # ADR-0002: Project ARCHITECTURE.md overrides flavor rules
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-19
+- **Decided:** 2026-08-20
 - **Deciders:** repo owner
 
 ## Context

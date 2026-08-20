@@ -144,7 +144,9 @@ Full reference: [`docs/artifacts.md`](docs/artifacts.md).
 3. `.claude-code-skills.json` — manifest of the skill directories this package installed.
 4. `plugins/installed_plugins.json` and `settings.json` — registers and enables `claude-code-skills@npm` with `installPath` set to this repo.
 
-**Copies win over plugin discovery.** A skill present in both `~/.claude/skills/` and the plugin's `installPath` loads from `~/.claude/skills/`. That makes the copy authoritative at runtime and the repo authoritative in git — so an edit here does nothing until postinstall runs again.
+**The copies are what run.** Plugin skills are namespaced `/plugin-name:skill-name` and *coexist* with same-named unprefixed skills rather than overriding them — so a copy in `~/.claude/skills/` does not shadow the plugin's, it simply provides the unprefixed name that gets invoked. The copy is authoritative at runtime, the repo authoritative in git, and an edit here does nothing until postinstall runs again.
+
+**Unverified:** no `claude-code-skills:*` namespaced skill has been observed in a session, and `~/.claude/plugins/cache/` holds only marketplace-installed plugins. The hand-written `installed_plugins.json` registration may be inert, with the copies doing all the work (ADR-0003 follow-up).
 
 The push hook (`.claude/settings.json`, `PostToolUse` on `git push`) re-runs postinstall, which keeps the two in sync at the point work leaves the machine. Between an edit and the next push, the copy is stale by design.
 
@@ -240,9 +242,17 @@ npm run validate  # same thing, clearer name in CI
 
 Rules in this file state *what*. The *why* lives in `docs/adr/`. Accepted ADRs are binding — if a rule here contradicts an accepted ADR, the ADR wins and this file is wrong.
 
-No ADRs recorded yet. Candidates already visible in the conventions above: the zero-dependency constraint on scripts, validation-only testing, and one-owner-per-artifact.
+| ADR | Decision | Affects |
+|---|---|---|
+| [0001](docs/adr/0001-flavor-activation-marker.md) | Declare flavors with a `> Flavor: <name>` marker in `ARCHITECTURE.md` | Flavor activation, marker resolution |
+| [0002](docs/adr/0002-project-architecture-overrides-flavor.md) | A project's `ARCHITECTURE.md` overrides flavor rules | Precedence in every loop skill |
+| [0003](docs/adr/0003-flavors-ship-as-separate-plugins.md) | Flavors ship as plugins from this repo, enabled per project | Distribution, install model, `plugins/` layout |
 
-Rules derived from an ADR cite it inline, e.g. *(ADR-0003)*.
+A flavor plugin must **not** copy its skills into `~/.claude/skills/` the way this package does — that would make them globally active and defeat per-project enablement (ADR-0003).
+
+Rules derived from an ADR cite it inline, e.g. *(ADR-0001)*.
+
+Not yet recorded, and each qualifies: the zero-dependency constraint on scripts, validation-only testing, one-owner-per-artifact, and the install model that copies skills into `~/.claude/skills/`.
 
 ---
 
