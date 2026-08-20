@@ -61,14 +61,36 @@ The plugin ID is `claude-code-skills@npm`. Changing it in `postinstall.js` and `
 The skills form a pipeline. Key dependency chain:
 
 ```
-/sprint  →  milestones → dev → qa
-/grind   →              dev → qa (no Dev→QA gate; batch mode)
+architecture → adr-create → adr-review → ARCHITECTURE.md updated
+idea-backlog → milestones → dev → qa → product-docs → /ship
+/sprint  →     milestones → dev → qa
+/grind   →                  dev → qa (no Dev→QA gate; batch mode)
+/status  →     read-only report across every spec file
 ```
 
 - `dev` and `qa` both hard-stop if `ARCHITECTURE.md` is missing — they direct users to `/architecture`
 - `qa` creates/updates `BUSINESS_RULES.md`; `learn-from-pr` and `backfill-pr-rules` read it before writing code rules to avoid contradictions
 - `dev` Step 5 runs `/review-branch` before QA handoff
 - `milestones` skill manages `[ACTIVE]`; `qa` skill sets `[COMPLETED]`; milestones skill never sets `[COMPLETED]` itself
+- `adr-create` writes ADRs to `docs/adr/` as `Proposed` only; `adr-review` is the sole writer of `Accepted`/`Rejected`/`Superseded`, and on acceptance propagates the decision into `ARCHITECTURE.md`
+- `architecture` Step 2b offers ADRs for trade-off answers (not for conventions); `dev` stops rather than violating an accepted ADR; `/review-branch` flags a violation `[BLOCKER]`
+- ADRs are immutable once accepted — changed decision means a new superseding ADR, never an edit
+- `idea-backlog` owns `idea-backlog.md` and never writes `MILESTONES.md` — promotion invokes the `milestones` skill, which then hands back so the idea line can be moved to `## Promoted`
+- `product-docs` owns `docs/product/` **in the target repo**; `qa` Step 9 offers to run it when a milestone changed user-visible behaviour
+- File naming rule: skills hard-stop on `UPPERCASE.md` files; staging and derived files are lowercase (`idea-backlog.md`, `milestones-archived.md`, `docs/product/`)
+- `architecture` Step 0 branches on greenfield (empty/scaffold-only repo → design from intent, record stack choices as ADRs) vs existing codebase (read and document)
+- `/ship` is the only command that commits, pushes, or opens a PR; `/status` is strictly read-only
+- Full methodology docs live in `docs/` — update them when the pipeline changes
+
+## Validating this repo
+
+```bash
+npm test          # node scripts/validate.js
+```
+
+Checks skill frontmatter (`name` must equal its directory, description present and ≤ 1024 chars), command file naming, `.claude-plugin/plugin.json`, and that every backticked slash reference across skills, commands, docs, README, and CLAUDE.md resolves to a real skill, command, or Claude Code builtin.
+
+Illustrative slash names (route URL examples, hypothetical skills in `create-skill`) are declared per-file with `<!-- validate: allow-refs foo, bar -->`. Run this after renaming or removing any skill or command — stale cross-references are the most common breakage.
 
 ## Adding or updating skills/commands
 
