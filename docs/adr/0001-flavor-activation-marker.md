@@ -1,7 +1,8 @@
 # ADR-0001: Declare flavors with a marker in ARCHITECTURE.md
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-19
+- **Decided:** 2026-08-20
 - **Deciders:** repo owner
 
 ## Context
@@ -21,7 +22,16 @@ A project declares its flavor with a marker line in the `ARCHITECTURE.md` header
 > Flavor: game-dev
 ```
 
-The marker names a flavor skill, `flavor-<name>`. Core loop skills read the marker as part of the `ARCHITECTURE.md` they already load, and invoke the matching flavor skill for the phase they are running. No marker means no flavor, and the pipeline behaves exactly as it does without flavors.
+The marker names a flavor. Core loop skills read it as part of the `ARCHITECTURE.md` they already load, resolve it to a skill, and invoke that skill for the phase they are running. No marker means no flavor, and the pipeline behaves exactly as it does without flavors.
+
+Resolution accepts either form, because a flavor may ship inside this package or as a separate plugin, and Claude Code namespaces plugin skills as `/plugin-name:skill-name`:
+
+| Marker | Resolves to |
+|---|---|
+| `> Flavor: game-dev` | `flavor-game-dev` — a skill in this package |
+| `> Flavor: game-dev@game-pack` | `game-pack:flavor` — a skill from a separate plugin |
+
+The bare form is tried first. This keeps the marker stable regardless of how the flavor is distributed, which matters because packaging is a separate decision that may change without the declaration changing.
 
 ## Alternatives considered
 
@@ -30,6 +40,9 @@ Keeps `ARCHITECTURE.md` purely about code structure. Rejected because `CLAUDE.md
 
 ### Explicit flag per invocation (`/sprint --flavor game-dev`)
 Zero configuration and maximally flexible. Rejected because it is forgettable: one missed flag produces a run that silently uses core defaults, and the failure is invisible until someone notices the output is wrong. Configuration that must be repeated is configuration that will be skipped.
+
+### Dedicated config file (`.claude-flavor`, or a field in `package.json`)
+The conventional way tools take configuration, and the one option here with a real schema — a typo would fail at parse time instead of vanishing. Rejected for the same reason as `CLAUDE.md`, one step worse: it adds a file that no loop skill currently reads, so every one of them would need a new read for a single line of config. It also splits "how this repo behaves" across two files when the whole point of `ARCHITECTURE.md` is that it is the one file every phase already loads. The schema advantage is real and is answered by validation rather than by a second file.
 
 ### Auto-detect from repo contents
 Sniff for `project.godot`, `*.uproject`, `ProjectSettings/`. Rejected because it is undeclared magic — a repo would behave differently with nothing in the tree explaining why, and detection would misfire on repos that merely contain a game as a subdirectory. Detection may still be offered as a *suggestion* by `architecture`, but it will not activate anything on its own.
@@ -47,6 +60,8 @@ Sniff for `project.godot`, `*.uproject`, `ProjectSettings/`. Rejected because it
 - Only one flavor can be declared this way without inventing a list syntax. Composing two flavors is deferred, not solved.
 
 **Follow-up**
-- `ARCHITECTURE.md` template gains the marker line and an explanation of it.
-- `architecture` skill offers the marker when it detects a domain it has a flavor for.
-- `scripts/validate.js` checks that any declared flavor resolves to a real `flavor-<name>` skill, so a typo fails loudly.
+- `ARCHITECTURE.md` template gains the marker line and an explanation of it. — *done*
+- `architecture` skill offers the marker when it detects a domain it has a flavor for. — *done*
+- `scripts/validate.js` checks that a declared flavor resolves to a real skill. — *done*
+- **Open:** a misspelled key (`Flavour:`) matches no marker at all, so the project reads as unflavored and the run proceeds silently. Validation catches a marker that resolves to nothing; it cannot catch a marker it never sees. Needs a check for header lines that look like a near-miss of `Flavor:`.
+- **Open:** namespaced resolution (`name@plugin`) is specified above but not yet implemented in the core skills or the validator.
