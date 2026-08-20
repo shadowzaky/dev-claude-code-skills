@@ -97,7 +97,8 @@ Scan the project to understand its actual structure before writing a single word
 6. Read any existing config files: `tsconfig.json`, `jest.config.js`, `.eslintrc`, `docker-compose.yml`, ORM config, etc.
 7. Check for any existing `ARCHITECTURE.md`, `CLAUDE.md`, `README.md` — read them for prior decisions.
 8. Check the test directory structure and read 1–2 test files.
-9. Read `docs/adr/` if it exists. Every `Accepted` ADR is binding — `ARCHITECTURE.md` must be consistent with all of them. If the code contradicts an accepted ADR, document the ADR's rule and flag the violation to the user; do not document the violation as the convention.
+9. Check whether a flavor applies. If an existing `ARCHITECTURE.md` declares one (`> Flavor: <name>`), invoke `flavor-<name>` and include its **Architecture extensions** sections in the document. If none is declared but the codebase clearly belongs to a domain a flavor covers, **suggest** it — never activate one on the user's behalf (ADR-0001).
+10. Read `docs/adr/` if it exists. Every `Accepted` ADR is binding — `ARCHITECTURE.md` must be consistent with all of them. If the code contradicts an accepted ADR, document the ADR's rule and flag the violation to the user; do not document the violation as the convention.
 
 ---
 
@@ -149,6 +150,7 @@ Write the file to the project root. Use the structure below exactly — do not o
 # Architecture
 
 > Last updated: YYYY-MM-DD
+> Flavor: <name>          <!-- omit this line entirely when no flavor applies -->
 
 ## Stack
 
@@ -349,6 +351,15 @@ Rules derived from an ADR cite it inline, e.g.:
 
 A changed decision means a new ADR that supersedes the old one, then an update here — never a
 silent edit to a rule whose reasoning is recorded elsewhere.
+
+---
+
+## Flavor extensions
+
+Only when a flavor is declared. Append the sections listed in that flavor's **Architecture
+extensions**, filled from the codebase and the user's answers like every other section.
+
+Flavor rules are defaults — anything stated in this file overrides them (ADR-0002).
 
 ---
 

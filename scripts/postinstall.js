@@ -10,6 +10,11 @@ const claudeDir = path.join(os.homedir(), '.claude');
 const pluginRoot = path.resolve(__dirname, '..');
 const pkg = require('../package.json');
 
+// Skills are copied into ~/.claude/skills/ alongside commands, and the copies win over the
+// plugin's own discovery. The manifest records which directories this package installed, so
+// pruning a renamed or removed skill never touches one the user wrote by hand.
+const MANIFEST_PATH = path.join(claudeDir, '.claude-code-skills.json');
+
 function readJson(filePath) {
   try {
     return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -37,7 +42,43 @@ if (fs.existsSync(commandsSrc)) {
   }
 }
 
-// 2. Register plugin in installed_plugins.json
+// 2. Copy skills to ~/.claude/skills/
+const skillsSrc = path.join(pluginRoot, 'skills');
+const skillsDest = path.join(claudeDir, 'skills');
+const installedSkills = [];
+
+if (fs.existsSync(skillsSrc)) {
+  fs.mkdirSync(skillsDest, { recursive: true });
+
+  for (const entry of fs.readdirSync(skillsSrc, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+
+    const skillFile = path.join(skillsSrc, entry.name, 'SKILL.md');
+    if (!fs.existsSync(skillFile)) continue;
+
+    fs.mkdirSync(path.join(skillsDest, entry.name), { recursive: true });
+    fs.copyFileSync(skillFile, path.join(skillsDest, entry.name, 'SKILL.md'));
+    installedSkills.push(entry.name);
+    console.log(`  [skill]   ${entry.name}`);
+  }
+
+  // Prune skills this package installed previously but no longer ships. Only names recorded
+  // in the manifest are eligible — an unrecognised directory is the user's, not ours.
+  const previous = readJson(MANIFEST_PATH)?.skills || [];
+  for (const stale of previous.filter((name) => !installedSkills.includes(name))) {
+    const staleDir = path.join(skillsDest, stale);
+    if (fs.existsSync(staleDir)) {
+      fs.rmSync(staleDir, { recursive: true, force: true });
+      console.log(`  [skill]   removed ${stale} (no longer shipped)`);
+    }
+  }
+
+  // Written only when skills/ was actually read. Writing an empty manifest on a package with
+  // no skills directory would erase the record of what to clean up at uninstall.
+  writeJson(MANIFEST_PATH, { skills: installedSkills, updatedAt: new Date().toISOString() });
+}
+
+// 3. Register plugin in installed_plugins.json
 const installedPluginsPath = path.join(claudeDir, 'plugins', 'installed_plugins.json');
 const installedPlugins = readJson(installedPluginsPath) || { version: 2, plugins: {} };
 
@@ -55,7 +96,7 @@ installedPlugins.plugins[PLUGIN_ID] = [{
 writeJson(installedPluginsPath, installedPlugins);
 console.log(`  [plugin]  registered ${PLUGIN_ID} -> ${pluginRoot}`);
 
-// 3. Enable plugin in settings.json
+// 4. Enable plugin in settings.json
 const settingsPath = path.join(claudeDir, 'settings.json');
 const settings = readJson(settingsPath) || {};
 settings.enabledPlugins = settings.enabledPlugins || {};

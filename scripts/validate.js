@@ -16,6 +16,19 @@ const manifestPath = path.join(repoRoot, '.claude-plugin', 'plugin.json');
 const MAX_DESCRIPTION_LENGTH = 1024;
 const KEBAB_CASE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
+// Flavors are skills named flavor-<name>. Core loop skills resolve them from the
+// `> Flavor: <name>` marker in a project's ARCHITECTURE.md, and each consuming skill
+// reads exactly one of these sections — a missing one leaves that skill nothing to apply.
+const FLAVOR_PREFIX = 'flavor-';
+const FLAVOR_REQUIRED_SECTIONS = [
+  '## Activation',
+  '## Milestone criteria',
+  '## Dev standards',
+  '## QA checks',
+  '## Review dimensions',
+  '## Architecture extensions',
+];
+
 // Slash commands provided by Claude Code itself — referencing these is not a broken link.
 const BUILTIN_COMMANDS = new Set([
   'clear', 'compact', 'config', 'cost', 'doctor', 'help', 'init', 'login',
@@ -35,6 +48,14 @@ function warn(file, message) {
 
 function relative(filePath) {
   return path.relative(repoRoot, filePath).split(path.sep).join('/');
+}
+
+function readJsonOrNull(filePath) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch {
+    return null;
+  }
 }
 
 function listMarkdown(dir) {
@@ -72,6 +93,7 @@ function parseFrontmatter(source) {
 // --- Skills ------------------------------------------------------------------
 
 const skillNames = new Set();
+const flavorNames = new Set();
 const seenNames = new Map();
 
 if (!fs.existsSync(skillsDir)) {
@@ -129,17 +151,38 @@ if (!fs.existsSync(skillsDir)) {
       if (description.length > MAX_DESCRIPTION_LENGTH) {
         error(label, `description is ${description.length} chars (max ${MAX_DESCRIPTION_LENGTH})`);
       }
-      if (!/trigger/i.test(description)) {
-        warn(label, 'description does not mention triggers — auto-invocation will be unreliable');
-      }
-      if (name && !description.includes(`/${name}`)) {
-        warn(label, `description does not list the "/${name}" invocation`);
+      // Flavors are resolved by name from a project's marker, not matched against user
+      // phrasing, so trigger wording is irrelevant — what matters is that the description
+      // says the loop invokes it, so nobody documents it as a user-facing command.
+      if (dirName.startsWith(FLAVOR_PREFIX)) {
+        if (!/invoked by/i.test(description)) {
+          warn(label, 'flavor description should state that core loop skills invoke it');
+        }
+      } else {
+        if (!/trigger/i.test(description)) {
+          warn(label, 'description does not mention triggers — auto-invocation will be unreliable');
+        }
+        if (name && !description.includes(`/${name}`)) {
+          warn(label, `description does not list the "/${name}" invocation`);
+        }
       }
     }
 
     const body = source.slice(source.indexOf('---', 3) + 3).trim();
     if (body.length < 200) {
       warn(label, 'body is very short — skills need enough instruction to be useful');
+    }
+
+    if (dirName.startsWith(FLAVOR_PREFIX)) {
+      flavorNames.add(dirName.slice(FLAVOR_PREFIX.length));
+      for (const section of FLAVOR_REQUIRED_SECTIONS) {
+        if (!body.includes(`${section}\n`)) {
+          error(label, `flavor is missing the "${section}" section — the skill that consumes it would find nothing to apply`);
+        }
+      }
+      if (dirName === FLAVOR_PREFIX.slice(0, -1) || dirName === FLAVOR_PREFIX) {
+        error(label, 'flavor directory needs a name after the prefix, e.g. flavor-game-dev');
+      }
     }
   }
 }
@@ -178,6 +221,52 @@ if (!fs.existsSync(commandsDir)) {
   }
 }
 
+// --- Core neutrality ---------------------------------------------------------
+
+// Core skills and commands resolve `flavor-<name>` from a project's marker; they must never
+// name a specific flavor. Naming one puts domain vocabulary in the core, which is exactly
+// what the flavor mechanism exists to prevent. Docs and README may name flavors freely.
+for (const flavor of flavorNames) {
+  const targets = [
+    ...fs
+      .readdirSync(skillsDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && !entry.name.startsWith(FLAVOR_PREFIX))
+      .map((entry) => path.join(skillsDir, entry.name, 'SKILL.md')),
+    ...listMarkdown(commandsDir).map((file) => path.join(commandsDir, file)),
+  ].filter((file) => fs.existsSync(file));
+
+  // Word-boundary match, not substring: a flavor named "web" must not fire on "website".
+  // Short generic flavor names can still collide with ordinary prose — pick specific ones.
+  const mention = new RegExp(`\\b${flavor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+
+  for (const file of targets) {
+    if (mention.test(fs.readFileSync(file, 'utf8'))) {
+      error(
+        relative(file),
+        `names the "${flavor}" flavor — core skills and commands must resolve flavor-<name> generically`
+      );
+    }
+  }
+}
+
+// --- Flavor marker -----------------------------------------------------------
+
+// Only this repo's own ARCHITECTURE.md is checked here. A consuming project's marker is
+// validated at runtime by dev/qa/review-branch, which stop when it does not resolve.
+const architecturePath = path.join(repoRoot, 'ARCHITECTURE.md');
+if (fs.existsSync(architecturePath)) {
+  const marker = fs
+    .readFileSync(architecturePath, 'utf8')
+    .match(/^>\s*Flavor:\s*(\S+)\s*$/m);
+
+  if (marker) {
+    const flavorSkill = `${FLAVOR_PREFIX}${marker[1]}`;
+    if (!skillNames.has(flavorSkill)) {
+      error('ARCHITECTURE.md', `declares flavor "${marker[1]}" but no ${flavorSkill} skill exists`);
+    }
+  }
+}
+
 // --- Plugin manifest ---------------------------------------------------------
 
 if (!fs.existsSync(manifestPath)) {
@@ -189,6 +278,20 @@ if (!fs.existsSync(manifestPath)) {
     if (!manifest.description) warn('.claude-plugin/plugin.json', 'missing `description`');
   } catch (err) {
     error('.claude-plugin/plugin.json', `invalid JSON — ${err.message}`);
+  }
+}
+
+// --- Zero-dependency constraint ----------------------------------------------
+
+// These scripts run in postinstall on every teammate's machine. A dependency there is both
+// a supply-chain surface and a failure mode nobody can debug mid-install.
+const pkg = readJsonOrNull(path.join(repoRoot, 'package.json'));
+if (pkg) {
+  for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
+    const names = Object.keys(pkg[field] || {});
+    if (names.length > 0) {
+      error('package.json', `${field} must stay empty — found ${names.join(', ')}`);
+    }
   }
 }
 

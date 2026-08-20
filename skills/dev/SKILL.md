@@ -37,6 +37,7 @@ Look for `ARCHITECTURE.md` in the project root.
   > Once `ARCHITECTURE.md` exists, re-run `/dev` to continue.
 
 - If it exists: read it fully. All implementation decisions must conform to it.
+- If the header block declares a flavor (`> Flavor: <name>`), invoke the `flavor-<name>` skill and apply its **Dev standards** section on top of the standards below. Where a flavor rule and `ARCHITECTURE.md` conflict, `ARCHITECTURE.md` wins — say so once in your output rather than overriding silently. If no such skill exists, **stop**: the marker is wrong and guessing which flavor was meant is worse than asking.
 - If `docs/adr/` exists, read the `Accepted` ADRs too — they are binding, and they explain *why* the rules are what they are. If a task cannot be implemented without violating an accepted ADR, **stop** and tell the user: the ADR must be superseded via `/adr-create` and `/adr-review` first, not worked around in code.
 
 ### 1c. Read the active milestone

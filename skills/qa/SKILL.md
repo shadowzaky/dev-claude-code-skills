@@ -28,6 +28,8 @@ Read `MILESTONES.md`.
 Read `ARCHITECTURE.md`. If it does not exist: **stop** — tell the user:
 > No `ARCHITECTURE.md` found. Run `/architecture` to document the project architecture, then re-run `/qa`.
 
+If the header block declares a flavor (`> Flavor: <name>`), invoke the `flavor-<name>` skill and run its **QA checks** section in addition to the steps below. Where a flavor check and `ARCHITECTURE.md` conflict, `ARCHITECTURE.md` wins — state the override once. If no such skill exists, **stop** and report the bad marker.
+
 ### 1c. Check BUSINESS_RULES.md
 Look for `BUSINESS_RULES.md` in the project root.
 - If it exists: read it fully. These are the authoritative rules QA validates against.

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A Claude Code plugin distributed via npm. Installing it registers the package as a Claude Code plugin and copies slash commands into the user's `~/.claude/` directory. Skills are auto-discovered by Claude Code directly from the install path — no zip or cache step needed.
+A Claude Code plugin distributed via npm. Installing it copies skills and slash commands into the user's `~/.claude/` directory and registers the package as a Claude Code plugin.
 
 ## Running postinstall manually
 
@@ -22,11 +22,15 @@ node scripts/uninstall.js
 
 | Content type | Location in repo | Where Claude Code reads it |
 |---|---|---|
-| Skills | `skills/<name>/SKILL.md` | Read directly from `installPath` registered in `~/.claude/plugins/installed_plugins.json` |
+| Skills | `skills/<name>/SKILL.md` | Copied to `~/.claude/skills/` by postinstall — the copy wins over plugin discovery |
 | Commands | `commands/<name>.md` | Copied to `~/.claude/commands/` by postinstall |
 | Plugin manifest | `.claude-plugin/plugin.json` | Read from `installPath` by Claude Code |
 
-The `installPath` in `installed_plugins.json` points to the root of this repo (wherever npm installed it). Claude Code discovers skills by scanning `<installPath>/skills/*/SKILL.md` at session start.
+The `installPath` in `installed_plugins.json` points to the root of this repo (wherever npm installed it).
+
+**A skill in `~/.claude/skills/` shadows the plugin's copy of the same name.** That is why postinstall copies them: the copy is what runs, so an edit in this repo has no effect until postinstall runs again. The `PostToolUse` hook on `git push` re-runs it. Between an edit and the next push, `~/.claude/skills/` is stale by design — run `node scripts/postinstall.js` to sync sooner.
+
+`~/.claude/.claude-code-skills.json` records which skill directories this package installed. Pruning on later runs is limited to that list, so a hand-written user skill is never removed.
 
 ## Skill file format
 
@@ -78,9 +82,12 @@ idea-backlog → milestones → dev → qa → product-docs → /ship
 - `idea-backlog` owns `idea-backlog.md` and never writes `MILESTONES.md` — promotion invokes the `milestones` skill, which then hands back so the idea line can be moved to `## Promoted`
 - `product-docs` owns `docs/product/` **in the target repo**; `qa` Step 9 offers to run it when a milestone changed user-visible behaviour
 - File naming rule: skills hard-stop on `UPPERCASE.md` files; staging and derived files are lowercase (`idea-backlog.md`, `milestones-archived.md`, `docs/product/`)
+- Flavors are skills named `flavor-<name>`, activated by a `> Flavor: <name>` marker in a project's `ARCHITECTURE.md` (ADR-0001). Each core skill reads exactly one section of the flavor; project `ARCHITECTURE.md` overrides flavor rules (ADR-0002). Core skills must never contain domain vocabulary — only marker resolution
+- `setup-loop` onboards an existing repo — it surveys and sequences, then delegates every file to its owning skill; it writes nothing but `.gitignore` fixes
 - `architecture` Step 0 branches on greenfield (empty/scaffold-only repo → design from intent, record stack choices as ADRs) vs existing codebase (read and document)
 - `/ship` is the only command that commits, pushes, or opens a PR; `/status` is strictly read-only
 - Full methodology docs live in `docs/` — update them when the pipeline changes
+- This repo dogfoods its own pipeline: `idea-backlog.md` at the root holds unbuilt ideas for the plugin itself
 
 ## Validating this repo
 
