@@ -1,0 +1,11 @@
+# Architecture Decision Records
+
+Why the architecture is the way it is. Each record is immutable once accepted — a changed
+decision means a new ADR that supersedes the old one, never an edit to the original.
+
+Status: **Proposed** (awaiting `/adr-review`) · **Accepted** · **Rejected** · **Superseded** · **Deprecated**
+
+| # | Title | Status | Date |
+|---|---|---|---|
+| [0001](0001-flavor-activation-marker.md) | Declare flavors with a marker in ARCHITECTURE.md | Proposed | 2026-08-19 |
+| [0002](0002-project-architecture-overrides-flavor.md) | Project ARCHITECTURE.md overrides flavor rules | Proposed | 2026-08-19 |
