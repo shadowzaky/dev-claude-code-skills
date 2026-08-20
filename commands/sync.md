@@ -140,6 +140,9 @@ git log --oneline -5
 | One side untouched, other side changed | Accept the change — automatic |
 | Both sides changed same lines differently | **Ask the user** |
 | Conflict in migration, schema, or config file | **Always ask the user** |
+| Conflict in `docs/adr/` — two branches took the same ADR number | **Always ask the user.** Renumber one record and update every reference to it. Never merge two decisions into one file. |
+| Conflict on an ADR's status header (both sides changed status) | **Always ask the user** — one side may have accepted a record the other rejected |
+| Conflict in `MILESTONES.md` checkboxes | Keep the checked state from both sides — a task done on either branch is done |
 | Conflict involves deleted code | **Ask the user** |
 | Unsure for any reason | **Ask the user** |
 

@@ -11,8 +11,9 @@ Read `MILESTONES.md`. If not found at the root, also check `doc/milestones.md`. 
 - If file does not exist in either location or has no milestones: **stop** — tell the user to run `/milestones` or `/sprint` to define milestones first.
 - If `ARCHITECTURE.md` does not exist: **stop** — tell the user:
   > No `ARCHITECTURE.md` found. Run `/architecture` to document the project architecture first, then re-run `/grind`.
+- If `docs/adr/` exists: read every `Accepted` ADR — they are binding for every milestone in the queue. If any relevant ADR is still `Proposed`, name it and recommend `/adr-review` before the grind starts; batch mode is the worst place to discover a contested decision.
 - Build a list of all milestones that are NOT marked `[COMPLETED]`. These are the work queue.
-- If the queue is empty (all milestones already `[COMPLETED]`): **stop** — tell the user everything is done, suggest archiving with `/qa`.
+- If the queue is empty (all milestones already `[COMPLETED]`): **stop** — tell the user everything is done, suggest archiving with `/qa`. If `idea-backlog.md` has open ideas, mention that `/idea-backlog` can promote one into the next milestone.
 - Present the queue to the user:
 
   > **Grind queue — X milestones to complete:**
@@ -45,7 +46,7 @@ Mark the milestone `[ACTIVE]` in the milestones file (whichever path was found i
 Act as a senior developer:
 
 1. Read the milestone: goal, acceptance criteria, tasks.
-2. Plan the implementation (files, migrations, dependencies, risks) and present the plan to the user.
+2. Plan the implementation (files, migrations, dependencies, risks) and present the plan to the user. Flag any expensive-to-reverse or cross-module decision in the plan and offer `/adr-create` for it — that is part of the plan gate, not an afterthought.
 3. **GATE: wait for user confirmation of the plan before writing any code.**
 4. Implement each task, checking it off in `MILESTONES.md` as it completes.
 5. Write unit tests and integration tests following `ARCHITECTURE.md` conventions.
@@ -72,6 +73,7 @@ Act as a QA engineer:
 8. Mark the milestone `[COMPLETED]` in `MILESTONES.md`.
 9. Deliver QA report for this milestone (criteria, rules validated, tests added, suite summary).
 10. Ask: **"Archive [Milestone Name] to `milestones-archived.md`?"** — archive if yes, leave if no.
+11. If the milestone changed user-visible behaviour and `docs/product/` exists: update it via the `product-docs` skill in the same pass — no gate. Batch mode means the docs stay current without a second sweep at the end.
 
 ---
 
