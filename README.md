@@ -16,11 +16,13 @@ npm install git+ssh://git@github.com/shadowzaky/dev-claude-code-skills.git
 ```
 
 Postinstall automatically:
-- Copies slash commands to `~/.claude/commands/`
-- Registers the package as a Claude Code plugin (skills auto-discovered)
-- Enables the plugin in `~/.claude/settings.json`
+
+- Copies skills to `~/.claude/skills/` and slash commands to `~/.claude/commands/`
+- Registers and enables the plugin in `~/.claude/`
 
 Restart Claude Code after install.
+
+Editing a skill in this repo does not change what runs until postinstall copies it again — the `git push` hook does that, or run `node scripts/postinstall.js` to sync immediately.
 
 ## Uninstall
 
@@ -33,6 +35,7 @@ npm uninstall claude-code-skills
 
 | Skill | Trigger | Description |
 |-------|---------|-------------|
+| `setup-loop` | `/setup-loop` | Survey an existing repo and set up every pipeline artifact it is missing |
 | `idea-backlog` | `/idea-backlog` | Capture one-line ideas in `idea-backlog.md`, promote them into milestones |
 | `dev` | `/dev` | Implement an active milestone end-to-end |
 | `qa` | `/qa` | Validate a milestone and mark it complete |
@@ -42,6 +45,7 @@ npm uninstall claude-code-skills
 | `adr-review` | `/adr-review` | Review, accept/reject ADRs; audit accepted ones for drift |
 | `product-docs` | `/product-docs` | Create or update `docs/product/` in the target repo |
 | `create-skill` | `/create-skill` | Scaffold a new skill in this repo |
+| `flavor-game-dev` | marker | Game-dev layer over the loop — invoked by the marker, not typed |
 | `learn-from-pr` | `/learn-from-pr` | Convert PR review comments into persistent rules |
 | `backfill-pr-rules` | `/backfill-pr-rules` | Batch-process historical PR comments into rules |
 

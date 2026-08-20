@@ -212,6 +212,20 @@ Neither driver skips a milestone. A blocked milestone stops the run — it does 
 
 ---
 
+## Flavors
+
+A project can declare a domain layer over the loop with a marker in its `ARCHITECTURE.md`:
+
+```markdown
+> Flavor: game-dev
+```
+
+Core skills resolve the marker to a `flavor-<name>` skill and apply the one section relevant to their phase — `milestones` reads its criteria guidance, `dev` its standards, `qa` its checks, `/review-branch` its dimensions, `architecture` its extra document sections. No marker, no change in behaviour.
+
+Flavor rules are defaults: the project's `ARCHITECTURE.md` overrides any of them, and the overriding skill says so once rather than silently. Full contract and precedence chain in [flavors.md](flavors.md).
+
+---
+
 ## Supporting skills
 
 These do not sit in the loop but feed it.
@@ -224,6 +238,7 @@ These do not sit in the loop but feed it.
 | `/sync` | Fetch, merge main into the branch, resolve conflicts — auto only when intent is unambiguous, ask otherwise. |
 | `learn-from-pr` | One PR's review comments → persistent rules, at the right scope: project-specific to `CLAUDE.md`/`ARCHITECTURE.md`, generic to user-level skills. |
 | `backfill-pr-rules` | Same, batched over historical PRs. A pattern recurring across several PRs is treated as definitively generic. |
+| `setup-loop` | Onboards an existing repo: surveys what is there, reports the missing artifacts, then sets them up in dependency order by delegating to each owning skill. Never overwrites, never invents content. |
 | `adr-create` | Writes a `Proposed` ADR to `docs/adr/` from a described decision — or, given nothing, scans the repo and git history and suggests the decisions worth recording. |
 | `adr-review` | Reviews `Proposed` ADRs for completeness, honest consequences, and conflicts; on user sign-off accepts and propagates into `ARCHITECTURE.md`. Audits accepted ADRs for drift. |
 | `product-docs` | Writes and maintains `docs/product/` in the target repo — what the product does and for whom, grounded in shipped code and completed milestones. QA offers to run it after a milestone changes user-visible behaviour. |
