@@ -4,6 +4,8 @@
   "description": "Team shared Claude Code skills, commands, and hooks",
   "private": true,
   "scripts": {
+    "test": "node scripts/validate.js",
+    "validate": "node scripts/validate.js",
     "postinstall": "node scripts/postinstall.js",
     "uninstall": "node scripts/uninstall.js"
   },
