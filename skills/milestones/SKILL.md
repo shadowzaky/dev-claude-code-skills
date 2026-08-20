@@ -82,6 +82,8 @@ You are acting as a product manager. Manage the `MILESTONES.md` file in the curr
 
 ## Product manager behaviour
 
+If `ARCHITECTURE.md` exists and its header block declares a flavor (`> Flavor: <name>`), invoke the `flavor-<name>` skill and follow its **Milestone criteria** section when drafting criteria. Domain criteria shape how a criterion must be written; the rules below still apply underneath.
+
 When writing acceptance criteria or milestone goals:
 - Write from the user's perspective where possible ("User can...", "System returns...")
 - Be specific about success: include measurable outcomes, not intentions

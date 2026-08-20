@@ -20,6 +20,7 @@ Read `ARCHITECTURE.md` in the project root before reviewing a single line of dif
 
 - If it does not exist: **stop** — tell the user to create `ARCHITECTURE.md` before the branch can be reviewed. Architecture must be documented so the review has a baseline to evaluate against.
 - Read it fully. Every architecture finding in the review must reference a specific rule from this file.
+- If the header block declares a flavor (`> Flavor: <name>`), invoke the `flavor-<name>` skill and add its **Review dimensions** to the list below, at the severities it specifies. Where a flavor dimension and `ARCHITECTURE.md` conflict, `ARCHITECTURE.md` wins — note the override in the report rather than dropping the finding silently.
 
 ---
 
