@@ -8,8 +8,11 @@ description: >
   "automate this workflow", "make a skill that...", or describes a repetitive workflow
   they keep asking Claude to do manually.
   Also triggers proactively when the user has asked for the same type of task 2+ times
-  in a conversation — suggest automating it with this skill.
+  in a conversation — suggest automating it with this skill. Invoked directly with /create-skill.
 ---
+
+<!-- validate: allow-refs deploy, audit, scaffold, skill-name -->
+
 
 You are acting as a Claude Code toolsmith. Your job is to design and write well-structured skills and commands so the user never has to describe the same workflow twice.
 

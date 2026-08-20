@@ -3,14 +3,85 @@ name: architecture
 description: >
   Creates or updates ARCHITECTURE.md for the current project by reading the actual codebase.
   Documents folder structure, layer responsibilities, naming conventions, auth patterns,
-  error handling, testing strategy, and external service patterns.
+  error handling, testing strategy, and external service patterns. On an empty or scaffold-only
+  repo it switches to greenfield mode: designs the stack and layers from the user's intent and
+  records the stack choices as ADRs. Offers ADRs for decisions, not for conventions.
   Triggers when user says "create architecture", "document architecture", "setup architecture",
-  "write architecture doc", "/architecture", or when dev/qa skills detect ARCHITECTURE.md is missing.
+  "write architecture doc", "bootstrap a new project", "/architecture", or when dev/qa skills
+  detect ARCHITECTURE.md is missing.
 ---
+
+<!-- validate: allow-refs coach-profiles -->
+
 
 You are acting as a principal engineer documenting the architecture of this project. Your job is to produce an accurate, opinionated `ARCHITECTURE.md` that every developer (and every AI skill) can use as the single source of truth for how this codebase is structured and how to extend it correctly.
 
 Read the actual code — do not invent or assume. If something is ambiguous, ask the user.
+
+---
+
+## Step 0 — Is there a codebase yet?
+
+Check before anything else: does a source root with real application files exist?
+
+Treat the project as **greenfield** when there is no source root, or it holds only scaffolding — a README, a `package.json`, a bare framework template, a `.gitignore`. Anything with real modules, routes, or entities is **existing** — go to Step 1.
+
+Greenfield matters because the rest of this skill reads code to learn conventions, and there is none. Skipping the file entirely is not an option: `dev`, `qa`, and `/grind` all hard-stop without `ARCHITECTURE.md`, so a new project cannot start until it exists. Go to Step 0a.
+
+---
+
+## Step 0a — Greenfield: design instead of read
+
+You are designing the architecture, not documenting one. Everything comes from the user plus your judgement, so ask before you propose.
+
+### Gather intent
+
+1. **What is being built?** One or two sentences, plain language.
+2. **Who and what scale?** Users, expected load, growth — these decide far more than taste does.
+3. **Hard requirements.** Compliance, data residency, offline support, existing systems that must be integrated, contractual constraints.
+4. **Team and timeline.** Size, existing expertise, how soon something must run. A stack nobody on the team knows is a real cost, not a detail.
+5. **Deployment target.** Where it runs, and who operates it.
+6. **Anything already decided?** Sometimes the stack is not actually open — find out before proposing alternatives.
+
+If the user does not know an answer yet, record it as an open question rather than deciding it for them.
+
+### Propose the stack
+
+For each major choice — language and runtime, framework, database, ORM or query layer, auth mechanism, test framework, deployment target — present **two or three real options** with the trade-off that separates them, and a recommendation with a reason tied to an answer from the intent gathering.
+
+Do not present a single option as inevitable. If a choice genuinely has no alternative worth naming, say why in one line and move on.
+
+Default to boring, well-supported technology unless a requirement forces otherwise. A greenfield project has enough unknowns without novel infrastructure adding more.
+
+### Record the decisions
+
+Every stack choice is exactly what an ADR is for: expensive to reverse, constrains every module, and a reasonable engineer could pick differently.
+
+After the user confirms the stack, offer to record each significant choice via the `adr-create` skill — one ADR per choice, `Proposed`, with the alternatives you just discussed and the reasons they lost. That conversation is the most valuable ADR material the project will ever have, and it evaporates within a week if it is not written down now.
+
+Do not block on `/adr-review`. Write `ARCHITECTURE.md` and let the records be accepted separately.
+
+### Write the file
+
+Use the same Step 3 structure. Two differences:
+
+- Sections that cannot be answered yet get `> TBD — decided when the first [X] is built`, never a plausible guess. A guessed convention becomes a rule nobody agreed to.
+- Add a banner under the title:
+
+```markdown
+> **Designed, not yet built.** This architecture was written before implementation.
+> Re-run `/architecture` after the first milestone ships to reconcile it with the real code.
+```
+
+Then continue to Step 4.
+
+### Hand off
+
+Close with the actual next step:
+
+> `ARCHITECTURE.md` is in place, so `/dev` and `/qa` are unblocked.
+> Next: `/idea-backlog` to capture what you want to build, or `/milestones` to define the first one directly.
+> `/sprint` runs the whole pipeline for that first milestone.
 
 ---
 
@@ -26,6 +97,7 @@ Scan the project to understand its actual structure before writing a single word
 6. Read any existing config files: `tsconfig.json`, `jest.config.js`, `.eslintrc`, `docker-compose.yml`, ORM config, etc.
 7. Check for any existing `ARCHITECTURE.md`, `CLAUDE.md`, `README.md` — read them for prior decisions.
 8. Check the test directory structure and read 1–2 test files.
+9. Read `docs/adr/` if it exists. Every `Accepted` ADR is binding — `ARCHITECTURE.md` must be consistent with all of them. If the code contradicts an accepted ADR, document the ADR's rule and flag the violation to the user; do not document the violation as the convention.
 
 ---
 
@@ -49,7 +121,27 @@ Record all answers before proceeding to Step 3.
 
 ---
 
-## Step 3 — Write ARCHITECTURE.md
+## Step 2b — Capture the decisions worth recording
+
+Some answers from Step 2 are conventions. Others are **decisions** — and the reasoning behind those dies in this conversation unless it is written down.
+
+An answer deserves an ADR when any of these hold:
+
+- It is expensive or slow to reverse (persistence, auth mechanism, deployment target, public API shape, tenancy model).
+- It constrains work across more than one module.
+- A reasonable engineer would choose differently — it was a genuine trade-off, not a coin flip.
+- It rejects an obvious option for a non-obvious reason.
+
+It does **not** deserve an ADR when it is a naming convention, a folder layout, a formatting rule, or anything confined to one file. Those are `ARCHITECTURE.md` rules and nothing more.
+
+For each qualifying decision, offer:
+
+> That is a real trade-off, not just a convention — worth an ADR so the reasoning survives.
+> Record it as `ADR-000X: <decision as a title>`?
+
+If the user agrees, invoke the `adr-create` skill for each one, one at a time. Those ADRs are written as `Proposed` and need `/adr-review` before they are binding — do not wait on that to finish `ARCHITECTURE.md`.
+
+If `docs/adr/` does not exist yet and you found two or more qualifying decisions, mention the ADR log once and let the user opt in. Do not create it unprompted.
 
 Write the file to the project root. Use the structure below exactly — do not omit sections. Fill every section from what you read in the code plus the user's answers to ambiguity questions.
 
@@ -242,10 +334,30 @@ Step-by-step for adding a new domain/resource to the API:
 
 ---
 
+## Decision records
+
+Rules in this file state *what*. The *why* lives in `docs/adr/`. Accepted ADRs are binding —
+if a rule here contradicts an accepted ADR, the ADR wins and this file is wrong.
+
+| ADR | Decision | Affects |
+|---|---|---|
+| [0002](docs/adr/0002-typeorm.md) | Use TypeORM as the persistence layer | Repositories, migrations |
+| [0007](docs/adr/0007-single-tenant-database.md) | One database per customer | Data source, migrations |
+
+Rules derived from an ADR cite it inline, e.g.:
+> All tenant queries go through the per-tenant connection factory (ADR-0007).
+
+A changed decision means a new ADR that supersedes the old one, then an update here — never a
+silent edit to a rule whose reasoning is recorded elsewhere.
+
+---
+
 ## What does NOT belong in this file
 
+- Decision rationale and rejected alternatives → `docs/adr/`
 - Business rules → `BUSINESS_RULES.md`
 - Milestone tracking → `MILESTONES.md`
+- What the product does and for whom → `docs/product/`
 - Deployment and infrastructure → `README.md` or `docs/`
 - Secrets or credentials → environment variables only, never committed
 ```
@@ -262,6 +374,7 @@ After writing the file, present a summary of the key decisions documented:
 > - Auth: [how routes are protected]
 > - Error shape: [the response shape]
 > - Testing: [unit mock strategy + integration real DB]
+> - ADRs recorded: [list, or "none — no decisions met the bar"]
 >
 > Anything incorrect or missing?
 

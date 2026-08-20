@@ -10,6 +10,7 @@ Before starting, verify:
 - `ARCHITECTURE.md` exists in the project root. If not: **stop** — tell the user:
   > No `ARCHITECTURE.md` found. Run `/architecture` to document the project architecture first, then re-run `/sprint`.
 - `MILESTONES.md` may or may not exist — PM phase will create or update it.
+- If `docs/adr/` exists: read every `Accepted` ADR. They are binding for this sprint. If any ADR is still `Proposed` and relevant to what is about to be built, mention it once — `/adr-review` should settle it before the decision gets baked into code.
 
 ---
 
@@ -19,6 +20,7 @@ Invoke the `milestones` skill now.
 
 Act as a product manager. Work with the user to define a new milestone:
 
+0. If `idea-backlog.md` exists and has open ideas, list them first and ask: **"Start from a backlog idea, or something new?"** If the user picks one, the `idea-backlog` skill moves that line to `## Promoted` once the milestone is written.
 1. Ask the user: **"What are we building? Describe the feature or goal in plain language."**
 2. From their answer, draft:
    - A milestone name (short, descriptive, no number)
@@ -41,7 +43,7 @@ Act as a senior developer. Implement the active milestone end-to-end:
 
 1. Verify `ARCHITECTURE.md` exists — stop and ask the user to create it if missing (do not continue until it exists).
 2. Read the active milestone from `MILESTONES.md`.
-3. Plan the implementation (files, migrations, dependencies, risks) and present the plan to the user before writing any code.
+3. Plan the implementation (files, migrations, dependencies, risks) and present the plan to the user before writing any code. If the plan makes a decision that is expensive to reverse or crosses several modules — a new persistence choice, a new external dependency, a reversed structural choice — say so and offer `/adr-create` before coding, not after.
 4. Wait for user confirmation of the plan before coding.
 5. Implement each task, checking it off in `MILESTONES.md` as it completes.
 6. Write unit tests and integration tests following `ARCHITECTURE.md` conventions.
@@ -70,6 +72,17 @@ Act as a QA engineer. Validate the active milestone fully:
 9. Deliver the full QA report to the user (criteria table, rules validated, tests added, suite summary).
 10. Ask the user: **"Would you like to archive this milestone to `milestones-archived.md`?"**
 11. Archive if yes, leave in place if no.
+
+---
+
+## Phase 4 — Documentation follow-through
+
+Only if the milestone changed user-visible behaviour or recorded architectural decisions.
+
+- If `docs/product/` exists: offer to invoke the `product-docs` skill — move the shipped features to **Shipped**, record the milestone name and completion date, add any new user-facing `BR-XXX` IDs to their constraints.
+- If any ADR was created during this sprint and is still `Proposed`: remind the user to run `/adr-review`. A decision already implemented but never accepted is the worst of both — binding in code, unrecorded on paper.
+
+Skip this phase silently for internal-only changes with no decisions recorded.
 
 ---
 
