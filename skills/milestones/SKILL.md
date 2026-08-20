@@ -56,6 +56,13 @@ You are acting as a product manager. Manage the `MILESTONES.md` file in the curr
 - Read current `MILESTONES.md`.
 - Append the new milestone block before the final `---` or at end of file.
 - Do not disturb existing milestones.
+- If `idea-backlog.md` exists, check whether this milestone corresponds to an open idea. If it does, tell the user and let the `idea-backlog` skill move that line to `## Promoted` — do not edit `idea-backlog.md` yourself.
+
+### Promote a backlog idea
+- Invoked by the `idea-backlog` skill with a one-line idea.
+- Expand it into a full milestone block: name, goal, at least two acceptance criteria, task list.
+- If the idea is too large for one milestone (more than ~8 tasks), say so and hand it back to be split into several ideas rather than writing an oversized milestone.
+- Write the milestone, then hand control back so the backlog line can be marked promoted.
 
 ### Set a milestone active
 - Read current `MILESTONES.md`.

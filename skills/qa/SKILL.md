@@ -226,4 +226,16 @@ If the user says **yes**:
 ---
 ```
 
-If the user says **no**: leave `MILESTONES.md` as-is with `[COMPLETED]` marker. No further action.
+If the user says **no**: leave `MILESTONES.md` as-is with `[COMPLETED]` marker.
+
+---
+
+## Step 9 — Offer a product docs update
+
+If the milestone changed user-visible behaviour and `docs/product/` exists, ask:
+
+> This milestone changed what users can do. Update `docs/product/` to reflect it?
+
+If yes, invoke the `product-docs` skill to move the affected features to **Shipped**, record the milestone name and completion date, and add any new user-facing `BR-XXX` IDs to the relevant features' constraints.
+
+If `docs/product/` does not exist and the milestone shipped user-visible behaviour, mention `/product-docs` once as an option. Do not create it unprompted.
