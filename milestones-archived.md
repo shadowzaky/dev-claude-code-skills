@@ -3,6 +3,46 @@
 > Completed milestones, moved out of `MILESTONES.md` by the `qa` skill after sign-off.
 > Newest first. Nothing here is ever edited — an archived milestone is a record of what shipped.
 
+## Game-Dev Package [COMPLETED]
+
+> Archived: 2026-08-20 · Rules added: BR-021, BR-022 · Decisions: ADR-0005
+
+> Let a project that declares the game-dev flavor get that flavor's skills into its own repository with one command, usable in the same session, without putting game vocabulary in front of any other project on the machine.
+
+**Unblocked 2026-08-20 by ADR-0005.** This milestone was blocked because plugin-registered skills turned out not to load, which killed the marketplace route ADR-0003 had chosen. ADR-0005 replaced it: flavors install as committed copies in the consuming project's `.claude/skills/`, which hot-loads and is genuinely project-scoped. The goal, criteria, and tasks were rewritten against that decision — `marketplace.json` and the move to `plugins/game-dev/` are gone, and `flavor-game-dev` stays where it is.
+
+### Acceptance Criteria
+
+- [x] Running the install in a project that declares a flavor puts that flavor's skills in the project's `.claude/skills/`, and they are usable in the same session with no restart
+- [x] A project that has not run the install sees no trace of the flavor — no skills, no commands, no domain vocabulary anywhere in the loop
+- [x] An installed project records which flavor and which version it holds, so a stale copy is identifiable without diffing files against the source
+- [x] Re-running the install upgrades an already-installed project in place, and leaves no orphaned file from the previous version
+- [x] Installing a flavor never writes to `~/.claude/skills/` — verified by installing and confirming no new skill appears outside the project
+- [x] The install refuses to delete or overwrite a skill in the target project that it did not itself install
+- [x] A core skill or command naming a concrete flavor still fails `npm test` after the invocation path exists (BR-004 survives the change)
+- [x] `> Flavor: game-dev` activates the installed flavor through the loop's normal resolution, unchanged from ADR-0001
+
+### Tasks
+
+- [x] Determine whether `installed_plugins.json` registration loads skills, or whether only the `~/.claude/skills/` copies do — everything below depends on the answer → **only the copies load** (ADR-0004)
+- [x] Write `scripts/install-flavor.js` — zero-dependency Node (BR-009), copying a named flavor's skills into a target project's `.claude/skills/`
+- [x] Define and write `.claude/flavor.json` — flavor name, version, source sha — and use it as the manifest that makes pruning safe, mirroring how `postinstall.js` protects a user's own skills
+- [x] Make re-runs idempotent: upgrade in place, prune only what the manifest records, never touch anything else in the target
+- [x] Add the invocation to `architecture` and `setup-loop`, passing the flavor name read from the marker — never a literal, or BR-004 fails the build → `architecture` owns the invocation; `setup-loop` **surveys and delegates** rather than duplicating it, since it writes no other skill's files
+- [x] Extend `scripts/validate.js` to cover the new script and the `flavor.json` shape → required-scripts check and a require-scan enforcing BR-009 in code, not just `package.json`. **No `flavor.json` shape check:** this repo never contains one, so it would be dead code — the check belongs in a consuming project
+- [x] Verify end to end in a real game project: install, invoke a flavor skill in the same session, re-run to upgrade → install, orphan pruning, user-skill safety and the `~/.claude` refusal verified here 2026-08-20; **in-session loading in a real game repo confirmed by the repo owner**, not observed from this repo
+- [x] Update `docs/flavors.md` and `README.md` for the copy-install path, replacing the marketplace instructions
+
+### QA notes
+
+Six of the eight criteria were re-run mechanically against `master` at sign-off rather than trusting the dev-pass results. Criteria 1 (in-session loading) and 8 (marker resolution) were confirmed by the repo owner in a real game repository and were **not** observed from this repo — recorded that way deliberately.
+
+The consequential finding came from the dev pass, not the plan: `postinstall.js` was copying every `skills/` directory into `~/.claude/skills/`, flavors included, so the game flavor was globally active on every machine regardless of packaging. Per-project scoping had never worked, and ADR-0005 would have delivered nothing without that fix. It surfaced from a `Test-Path` expected to return false.
+
+BR-022 was written during this pass: criterion 6 was an acceptance criterion with no rule behind it, despite being the invariant that stops a reinstall deleting a user's own skill. BR-021's two guards remain asserted by nothing — carried into Flavor Contract Verification.
+
+---
+
 ## QA Retro [COMPLETED]
 
 > Archived: 2026-08-20 · Rules added: BR-018, BR-019, BR-020
