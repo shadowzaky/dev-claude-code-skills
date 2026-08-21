@@ -7,7 +7,7 @@ The skills implement a spec-driven PM → Dev → QA loop. See [docs/](docs/) fo
 - [The Loop](docs/the-loop.md) — phases, gates, state machine, `/sprint` vs `/grind`
 - [Spec-Driven Development](docs/spec-driven-development.md) — why the specs live in files
 - [Artifacts](docs/artifacts.md) — every spec file, its format, and its owner
-- [Flavors](docs/flavors.md) — domain-specific layers on top of the core loop (planned)
+- [Flavors](docs/flavors.md) — domain-specific layers on top of the core loop, installed per project
 
 ## Install
 
@@ -18,11 +18,21 @@ npm install git+ssh://git@github.com/shadowzaky/dev-claude-code-skills.git
 Postinstall automatically:
 
 - Copies skills to `~/.claude/skills/` and slash commands to `~/.claude/commands/`
-- Registers and enables the plugin in `~/.claude/`
+- Registers the plugin in `~/.claude/` — which delivers nothing on its own; the copies are what load (ADR-0005)
 
 Restart Claude Code after install.
 
 Editing a skill in this repo does not change what runs until postinstall copies it again — the `git push` hook does that, or run `node scripts/postinstall.js` to sync immediately.
+
+### Installing a flavor
+
+The core loop is domain-neutral. A flavor adds domain rules to a **single project**, so it installs into that project rather than into `~/.claude/`:
+
+```bash
+node <pluginRoot>/scripts/install-flavor.js game-dev --target .
+```
+
+`<pluginRoot>` is recorded in `~/.claude/.claude-code-skills.json`. The `architecture` skill offers this after writing a `> Flavor:` marker. Copies land in the project's `.claude/skills/`, load without a restart, and are committed so teammates get them on clone. See [Flavors](docs/flavors.md).
 
 ## Uninstall
 

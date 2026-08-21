@@ -1,6 +1,6 @@
 # Milestones
 
-## Game-Dev Package
+## Game-Dev Package [ACTIVE]
 
 > Let a project that declares the game-dev flavor get that flavor's skills into its own repository with one command, usable in the same session, without putting game vocabulary in front of any other project on the machine.
 
@@ -20,13 +20,15 @@
 ### Tasks
 
 - [x] Determine whether `installed_plugins.json` registration loads skills, or whether only the `~/.claude/skills/` copies do — everything below depends on the answer → **only the copies load** (ADR-0004)
-- [ ] Write `scripts/install-flavor.js` — zero-dependency Node (BR-009), copying a named flavor's skills into a target project's `.claude/skills/`
-- [ ] Define and write `.claude/flavor.json` — flavor name, version, source sha — and use it as the manifest that makes pruning safe, mirroring how `postinstall.js` protects a user's own skills
-- [ ] Make re-runs idempotent: upgrade in place, prune only what the manifest records, never touch anything else in the target
-- [ ] Add the invocation to `architecture` and `setup-loop`, passing the flavor name read from the marker — never a literal, or BR-004 fails the build
-- [ ] Extend `scripts/validate.js` to cover the new script and the `flavor.json` shape
-- [ ] Verify end to end in a real game project: install, invoke a flavor skill in the same session, re-run to upgrade
-- [ ] Update `docs/flavors.md` and `README.md` for the copy-install path, replacing the marketplace instructions
+- [x] Write `scripts/install-flavor.js` — zero-dependency Node (BR-009), copying a named flavor's skills into a target project's `.claude/skills/`
+- [x] Define and write `.claude/flavor.json` — flavor name, version, source sha — and use it as the manifest that makes pruning safe, mirroring how `postinstall.js` protects a user's own skills
+- [x] Make re-runs idempotent: upgrade in place, prune only what the manifest records, never touch anything else in the target
+- [x] Add the invocation to `architecture` and `setup-loop`, passing the flavor name read from the marker — never a literal, or BR-004 fails the build → `architecture` owns the invocation; `setup-loop` **surveys and delegates** rather than duplicating it, since it writes no other skill's files
+- [x] Extend `scripts/validate.js` to cover the new script and the `flavor.json` shape → required-scripts check and a require-scan enforcing BR-009 in code, not just `package.json`. **No `flavor.json` shape check:** this repo never contains one, so it would be dead code — the check belongs in a consuming project
+- [ ] Verify end to end in a real game project: install, invoke a flavor skill in the same session, re-run to upgrade → install and re-run verified; **invoking in-session needs a real game repo as the working directory** and is the one step that cannot be done from here
+- [x] Update `docs/flavors.md` and `README.md` for the copy-install path, replacing the marketplace instructions
+
+- [ ] Add a `flavor.json` contract check that runs in the consuming project, closing BR-005's residual gap
 
 ---
 

@@ -53,6 +53,9 @@ git remote -v
 | `docs/product/` | | `product-docs` |
 | `idea-backlog.md` | | `idea-backlog` |
 | `CLAUDE.md` | | `/init` |
+| `.claude/flavor.json` | | `architecture` — only when a flavor marker is declared |
+
+**A declared flavor that is not installed is a finding, not a missing artifact.** If `ARCHITECTURE.md` carries a `> Flavor:` marker but the project has no `.claude/skills/flavor-<name>/`, report it: every phase will hard-stop on the unresolvable marker (BR-002) until it is installed. A project with no marker needs no `flavor.json` and its absence means nothing.
 
 Also check for equivalents under other names — `docs/architecture.md`, `ROADMAP.md`, `doc/milestones.md`, `decisions/`, a `docs/` product folder. A repo that already documents something under a different name should be **adopted, not duplicated**: ask whether to move or rename it rather than creating a second source of truth.
 
@@ -132,6 +135,8 @@ Run only the confirmed steps, one at a time, reporting after each.
 Invoke the `architecture` skill. It will read the codebase, ask about inconsistencies, and offer ADRs for genuine trade-offs.
 
 If an architecture-like document already exists under another name, say so and ask: adopt it as the basis, or start fresh? Never silently duplicate.
+
+If the survey found a declared-but-uninstalled flavor, `architecture` handles the install as part of its own flavor step — do not run the installer from here. This skill sequences and delegates; it does not write another skill's files.
 
 ### 3c. ADRs
 

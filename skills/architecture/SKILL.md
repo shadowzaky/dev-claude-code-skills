@@ -363,6 +363,33 @@ extensions**, filled from the codebase and the user's answers like every other s
 
 Flavor rules are defaults — anything stated in this file overrides them (ADR-0002).
 
+### Installing the flavor into the project
+
+A marker declares a flavor; it does not deliver one. The flavor skill has to exist in this
+project's own `.claude/skills/` for the loop to resolve it (ADR-0005).
+
+After writing a marker, check for `.claude/flavor.json` in the project root:
+
+- **Missing, or naming a different flavor** — offer to install. Do not install unprompted;
+  it writes files into the user's repository.
+- **Present and matching** — compare its `version` against the installed package's. Mention a
+  mismatch once; a stale copy still works, so this is a note, not a stop.
+
+To install, read `pluginRoot` from `~/.claude/.claude-code-skills.json` and run:
+
+```bash
+node <pluginRoot>/scripts/install-flavor.js <name> --target .
+```
+
+**If that file has no `pluginRoot`**, the package was installed before the field existed. Do not guess a path — tell the user to run `node <path-to-package>/scripts/postinstall.js` once, which records it. If they do not know where the package lives, `npm ls -g --depth 0` or the `installPath` still sitting in `~/.claude/plugins/installed_plugins.json` will usually show it, but neither is guaranteed and both are worth confirming with them before running anything.
+
+`<name>` is the flavor read from the marker — never a literal. The skills land in the
+project's `.claude/skills/` and load immediately, with no restart.
+
+Tell the user the copies are committed to their repository, so their teammates get the flavor
+on clone. If they would rather not commit generated files, that is a deliberate reversal of
+ADR-0005 and belongs in a superseding ADR, not in a `.gitignore` line.
+
 ---
 
 ## What does NOT belong in this file
