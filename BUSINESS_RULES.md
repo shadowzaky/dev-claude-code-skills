@@ -1,7 +1,7 @@
 # Business Rules
 
 > Last updated: 2026-08-20
-> Updated by: QA pass on QA Retro
+> Updated by: rule intake — ADR-0005 acceptance (BR-021 added; BR-002, BR-005, BR-011 revised)
 
 Invariants this plugin must enforce regardless of how any individual skill is written.
 
@@ -24,6 +24,7 @@ reviewer knows to look.
 **Rule:** When `ARCHITECTURE.md` names a flavor and neither candidate resolves — `flavor-<name>`, nor `<plugin>:flavor` for the `@` form — the invoking skill stops and reports the bad marker. It never falls back to core defaults.
 **Rationale:** Silently ignoring a marker produces a run that looks flavored and is not — the failure surfaces later as work that skipped every domain check. (ADR-0001)
 **Validated by:** `scripts/validate.js` for the bare form on this repo's own `ARCHITECTURE.md`; skill-side behaviour is **manual** (hook text in `dev`, `qa`, `milestones`, `architecture`, `/review-branch`). For the `@` form the validator **cannot** enforce this — it cannot see inside another plugin, so it warns and defers; only the runtime stop covers that case.
+**Note (ADR-0005):** the `<plugin>:flavor` half of this rule is now unreachable. Plugin-provided skills do not load, so an `@` marker that falls through the bare form resolves to nothing and always hard-stops. The rule is unchanged and still correct — this is the outcome it exists to produce — but in practice it now fires for every `@` marker with no in-package counterpart.
 
 ### BR-003: Project rules override flavor rules
 **Rule:** Where a flavor rule and the project's `ARCHITECTURE.md` disagree, `ARCHITECTURE.md` wins, and the skill applying the override states it once in its output.
@@ -38,7 +39,7 @@ reviewer knows to look.
 ### BR-005: A flavor provides every contract section
 **Rule:** Every `flavor-<name>` skill contains all six sections — Activation, Milestone criteria, Dev standards, QA checks, Review dimensions, Architecture extensions. A section may be thin; none may be absent.
 **Rationale:** Each section has exactly one consuming skill. A missing one leaves that skill nothing to apply, and the omission is invisible at the point of use.
-**Validated by:** `scripts/validate.js` — flavor section check, **for flavors in this repository only**. Negative-tested: renaming `## QA checks` fails the run. Under ADR-0003 flavors may ship as separate plugins; for any flavor outside this repo the rule is **manual** until the contract ships as a runnable check.
+**Validated by:** `scripts/validate.js` — flavor section check. Negative-tested: renaming `## QA checks` fails the run. Under ADR-0005 every flavor is authored in this repository, so the checked copy *is* the source of truth and this rule is mechanically enforced where it is written. **Residual gap:** a consuming project holds a committed copy, and nothing in that project re-checks it — a hand-edited copy violates this rule silently, and the phase reading the removed section applies nothing. Detecting that needs the contract to ship as a runnable check against `.claude/flavor.json`; until it does, the copies are covered by this rule and enforced by nothing.
 
 ### BR-006: A flavor cannot remove a core gate
 **Rule:** No flavor may let dev close a milestone, skip QA rule discovery, or make `ARCHITECTURE.md` optional. Flavors add; they never subtract.
@@ -47,13 +48,18 @@ reviewer knows to look.
 
 ### BR-011: The bare form resolves first, for both marker forms
 **Rule:** `<name>@<plugin>` resolves to `flavor-<name>` when that skill exists in this package, and falls through to `<plugin>:flavor` only when it does not. A marker naming a plugin can therefore be satisfied by an in-package skill of the same name.
-**Rationale:** It keeps the declaration stable while a flavor moves between the package and a plugin — packaging changes without the marker changing. The cost is that a stale in-package copy outranks the plugin one; that self-heals, since `postinstall` prunes skills it previously installed. (ADR-0001)
+**Rationale:** Originally, to keep the declaration stable while a flavor moved between the package and a plugin — packaging could change without the marker changing (ADR-0001). **That rationale is void:** ADR-0005 established that plugin-provided skills do not load, so no flavor can make that move and the `<plugin>:flavor` fallback resolves to nothing. What survives is narrower and still worth keeping: bare-first means an `ARCHITECTURE.md` already carrying an `@` marker keeps working as long as the in-package flavor exists, so no project is forced to edit a committed declaration because packaging turned out differently than planned. The rule is retained for that tolerance, not for the migration it was written for.
 **Validated by:** `scripts/validate.js` — resolution order. Negative-tested on a scratch copy: `game-dev@game-pack` resolved clean via `flavor-game-dev`, while `nope@ghost` fell through and reported `ghost:flavor`.
 
 ### BR-012: A near-miss of the marker key is a hard stop
 **Rule:** A header key that is not exactly `Flavor` but is close to it — `Flavour:`, `flavor:`, `FLAVOR:`, `Flavor :` — is reported as a malformed marker. It is never treated as "no flavor declared".
 **Rationale:** This is the one failure the rest of the flavor system cannot catch. An unresolvable marker is loud; a *misspelled key* matches no marker at all, so the project reads as unflavored and every phase runs core defaults with nothing anywhere recording that a flavor was intended. (ADR-0001)
 **Validated by:** `scripts/validate.js` — near-miss detector over the header block, on this repo's own `ARCHITECTURE.md`; skill-side behaviour is **manual** (hook text in all five consumers). Negative-tested on a scratch copy: all four variants above error, while `Owner:`, `Version:`, `Status:`, `Flags:`, `Flow:`, `Layer:` and `Last updated:` stay clean, and a near-miss below the header block is correctly out of scope.
+
+### BR-021: Installing a flavor writes only inside the target project
+**Rule:** The flavor install writes to the target project's `.claude/` and nowhere else. It never writes to `~/.claude/skills/`, `~/.claude/commands/`, `~/.claude/settings.json`, or any path outside the project it was pointed at.
+**Rationale:** Scoping is the entire reason flavors install this way. A flavor that reaches `~/.claude/` becomes active in every repository on the machine, which puts domain skills in front of projects that have nothing to do with the domain — the failure ADR-0003 was written to avoid and ADR-0005 preserves by a different route. This does **not** constrain `postinstall.js`: the core loop skills are meant to be global and installing them user-level is correct. The rule binds flavor install only. (ADR-0005)
+**Validated by:** not yet enforced — the install script does not exist. Becomes checkable when `scripts/install-flavor.js` lands; until then this is **manual**, and it is the rule most likely to be broken by reusing `postinstall.js`'s copy helper, which targets `~/.claude/` by construction.
 
 ---
 
