@@ -1,7 +1,7 @@
 # Business Rules
 
 > Last updated: 2026-08-20
-> Updated by: rule intake — BR-021 rewritten after its carve-out was found to license a live bug
+> Updated by: QA pass on Game-Dev Package (BR-022 added)
 
 Invariants this plugin must enforce regardless of how any individual skill is written.
 
@@ -63,6 +63,11 @@ reviewer knows to look.
 > **This rule was first written with a carve-out saying it did not constrain `postinstall.js`.** That was wrong, and wrong in the direction that costs most: `postinstall.js` was copying *every* `skills/` directory user-level, flavors included, so `flavor-game-dev` was globally active and a project that never opted in still saw it. The carve-out read as permission for the exact bug it was hiding. Found during the Game-Dev Package dev pass, 2026-08-20, by checking a path that should not have existed. The rule now names both scripts, because a rule that exempts a component is a rule that stops being checked against it.
 
 **Validated by:** **behaviour, not assertion.** `install-flavor.js` refuses any target inside `~/.claude` (realpath-compared, so a symlink cannot slip past) and `postinstall.js` skips `flavor-*`, with manifest-driven pruning that removes copies an earlier version installed — verified 2026-08-20: `flavor-game-dev` disappeared from `~/.claude/skills/` and the manifest dropped to 13 core skills. But **`npm test` asserts none of this.** Both guards were confirmed by hand and nothing would catch their removal. Closing that needs a `validate.js` check that `postinstall.js` skips the flavor prefix and that `install-flavor.js` keeps its home guard.
+
+### BR-022: An installer never removes what it did not install
+**Rule:** Every script that writes skills into a directory prunes only what its own manifest records — `~/.claude/.claude-code-skills.json` for `postinstall.js`, `.claude/flavor.json` for `install-flavor.js`. A skill directory the manifest does not name is never deleted and never overwritten, however stale it looks.
+**Rationale:** Both scripts write into directories their users also write into by hand. Manifest-limited pruning is the only thing that makes those writes safe: without it, reinstalling silently deletes someone's own skill, and the loss is invisible until they go looking for it. The manifest is not bookkeeping — it is the boundary between "this is mine to clean up" and "this belongs to someone else".
+**Validated by:** **manual.** Verified 2026-08-20: a hand-written `hand-written/SKILL.md` in a target project survived a flavor reinstall, and an orphan file inside the flavor's own directory was correctly removed. `postinstall.js`'s equivalent is stated in `ARCHITECTURE.md` → Install and registration. `npm test` asserts neither, so this rule carries the same exposure as BR-021 and should be closed by the same `validate.js` work.
 
 ---
 
