@@ -6,13 +6,17 @@ const fs = require('fs');
 const path = require('path');
 
 const PLUGIN_ID = 'claude-code-skills@npm';
+const FLAVOR_PREFIX = 'flavor-';
 const claudeDir = path.join(os.homedir(), '.claude');
 const pluginRoot = path.resolve(__dirname, '..');
 const pkg = require('../package.json');
 
-// Skills are copied into ~/.claude/skills/ alongside commands, and the copies win over the
-// plugin's own discovery. The manifest records which directories this package installed, so
-// pruning a renamed or removed skill never touches one the user wrote by hand.
+// Skills are copied into ~/.claude/skills/ alongside commands. The copies are not a shortcut
+// around plugin discovery — they are the entire delivery mechanism, since plugin-registered
+// skills do not load at all (ADR-0005). The manifest records which directories this package
+// installed, so pruning a renamed or removed skill never touches one the user wrote by hand.
+// It also records pluginRoot: Claude Code evicts the installed_plugins.json entry on startup,
+// so this file is the only durable pointer back to the package for scripts/install-flavor.js.
 const MANIFEST_PATH = path.join(claudeDir, '.claude-code-skills.json');
 
 function readJson(filePath) {
@@ -53,6 +57,13 @@ if (fs.existsSync(skillsSrc)) {
   for (const entry of fs.readdirSync(skillsSrc, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
 
+    // Flavors are deliberately not installed here. Anything in ~/.claude/skills/ is active in
+    // every repository on the machine, which is exactly what per-project flavor scoping exists
+    // to prevent (ADR-0005). A flavor reaches a project through scripts/install-flavor.js and
+    // lives in that project's own .claude/skills/. Leaving them out here also means the prune
+    // below removes any copy an earlier version of this script installed.
+    if (entry.name.startsWith(FLAVOR_PREFIX)) continue;
+
     const skillFile = path.join(skillsSrc, entry.name, 'SKILL.md');
     if (!fs.existsSync(skillFile)) continue;
 
@@ -75,7 +86,11 @@ if (fs.existsSync(skillsSrc)) {
 
   // Written only when skills/ was actually read. Writing an empty manifest on a package with
   // no skills directory would erase the record of what to clean up at uninstall.
-  writeJson(MANIFEST_PATH, { skills: installedSkills, updatedAt: new Date().toISOString() });
+  writeJson(MANIFEST_PATH, {
+    skills: installedSkills,
+    pluginRoot,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 // 3. Register plugin in installed_plugins.json
