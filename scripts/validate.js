@@ -251,18 +251,116 @@ for (const flavor of flavorNames) {
 
 // --- Flavor marker -----------------------------------------------------------
 
+// Two marker forms resolve (ADR-0001):
+//
+//   > Flavor: my-domain            ->  flavor-my-domain, a skill in this package
+//   > Flavor: my-domain@some-pack  ->  some-pack:flavor, a skill from a separate plugin
+//
+// The bare form is tried first in both cases, so the marker stays stable when a flavor moves
+// between the package and a plugin.
+//
 // Only this repo's own ARCHITECTURE.md is checked here. A consuming project's marker is
-// validated at runtime by dev/qa/review-branch, which stop when it does not resolve.
+// validated at runtime by dev/qa/milestones/architecture/review-branch, which stop when it
+// does not resolve. A plugin skill is invisible from here either way — nothing in this repo
+// can see inside another plugin — so the namespaced form is confirmed at runtime, not now.
+
+const MARKER_KEY = 'Flavor';
+const NEAR_MISS_MAX_DISTANCE = 2;
+
+/** Levenshtein distance. Small inputs only — this compares header keys against one word. */
+function editDistance(a, b) {
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+
+  for (let i = 1; i <= a.length; i += 1) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j += 1) {
+      current[j] = Math.min(
+        previous[j] + 1,
+        current[j - 1] + 1,
+        previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+      );
+    }
+    previous = current;
+  }
+
+  return previous[b.length];
+}
+
+/**
+ * The contiguous run of blockquote lines at the top of the document, which is where the
+ * marker lives. Restricting the scan to it keeps ordinary blockquotes further down from
+ * being mistaken for malformed markers.
+ */
+function headerBlock(source) {
+  const block = [];
+  let started = false;
+
+  for (const line of source.split(/\r?\n/)) {
+    if (line.trimStart().startsWith('>')) {
+      started = true;
+      block.push(line);
+      continue;
+    }
+    if (started) break;
+    if (line.trim() === '' || line.trimStart().startsWith('#')) continue;
+    break;
+  }
+
+  return block;
+}
+
 const architecturePath = path.join(repoRoot, 'ARCHITECTURE.md');
 if (fs.existsSync(architecturePath)) {
-  const marker = fs
-    .readFileSync(architecturePath, 'utf8')
-    .match(/^>\s*Flavor:\s*(\S+)\s*$/m);
+  let markerValue = null;
 
-  if (marker) {
-    const flavorSkill = `${FLAVOR_PREFIX}${marker[1]}`;
-    if (!skillNames.has(flavorSkill)) {
-      error('ARCHITECTURE.md', `declares flavor "${marker[1]}" but no ${flavorSkill} skill exists`);
+  for (const line of headerBlock(fs.readFileSync(architecturePath, 'utf8'))) {
+    // The key is captured exactly as written, trailing space included, so that `Flavor :`
+    // is judged a near-miss instead of being quietly accepted.
+    const keyed = line.match(/^\s*>\s*([^:]{1,40}):\s*(.*)$/);
+    if (!keyed) continue;
+
+    const [, rawKey, value] = keyed;
+
+    if (rawKey === MARKER_KEY) {
+      if (markerValue !== null) {
+        error('ARCHITECTURE.md', `declares more than one "${MARKER_KEY}:" marker — a project has at most one flavor`);
+      }
+      markerValue = value.trim();
+      continue;
+    }
+
+    // A misspelled key matches no marker at all, so without this the project reads as
+    // unflavored and every phase runs with core defaults, silently (ADR-0001).
+    const normalized = rawKey.toLowerCase().replace(/[^a-z]/g, '');
+    if (editDistance(normalized, MARKER_KEY.toLowerCase()) <= NEAR_MISS_MAX_DISTANCE) {
+      error(
+        'ARCHITECTURE.md',
+        `header key "${rawKey}:" looks like a misspelled "${MARKER_KEY}:" — the flavor ` +
+        `would be ignored and every phase would run unflavored`
+      );
+    }
+  }
+
+  if (markerValue === '') {
+    error('ARCHITECTURE.md', `"${MARKER_KEY}:" marker has no value — name a flavor or remove the line`);
+  } else if (markerValue !== null) {
+    const [name, plugin, ...extra] = markerValue.split('@');
+    const bareSkill = `${FLAVOR_PREFIX}${name}`;
+
+    if (extra.length > 0) {
+      error('ARCHITECTURE.md', `flavor marker "${markerValue}" has more than one "@" — expected <name> or <name>@<plugin>`);
+    } else if (!KEBAB_CASE.test(name) || (plugin !== undefined && !KEBAB_CASE.test(plugin))) {
+      error('ARCHITECTURE.md', `flavor marker "${markerValue}" must be kebab-case, as <name> or <name>@<plugin>`);
+    } else if (skillNames.has(bareSkill)) {
+      // Resolved in this package. The bare form wins for both marker forms.
+    } else if (plugin) {
+      warn(
+        'ARCHITECTURE.md',
+        `flavor "${markerValue}" resolves to the plugin skill "${plugin}:flavor" — validation ` +
+        `cannot see inside another plugin, so the loop skills confirm it at runtime`
+      );
+    } else {
+      error('ARCHITECTURE.md', `declares flavor "${markerValue}" but no ${bareSkill} skill exists`);
     }
   }
 }

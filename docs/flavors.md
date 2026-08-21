@@ -30,7 +30,28 @@ A project declares its flavor with a marker in the `ARCHITECTURE.md` header bloc
 > Flavor: game-dev
 ```
 
-The marker names a skill, `flavor-<name>`. Core loop skills read it from the `ARCHITECTURE.md` they already load and hard-stop on, and invoke the matching flavor skill for the phase they are running.
+Core loop skills read the marker from the `ARCHITECTURE.md` they already load and hard-stop on, and invoke the flavor skill it names for the phase they are running.
+
+### The two forms
+
+A flavor may ship inside this package or as a separate plugin, and Claude Code namespaces plugin skills as `/plugin-name:skill-name`. The marker accepts both:
+
+| Marker | Resolves to |
+|---|---|
+| `> Flavor: game-dev` | `flavor-game-dev` — a skill in this package |
+| `> Flavor: game-dev@game-pack` | `game-pack:flavor` — a skill from the `game-pack` plugin |
+
+**The bare form is tried first, for both forms.** A marker written `game-dev@game-pack` resolves to `flavor-game-dev` if that skill exists here, and only falls through to `game-pack:flavor` when it does not. That is what keeps the marker stable while a flavor moves between the package and a plugin — the declaration does not change when the packaging does.
+
+If neither candidate resolves, every phase **stops**. Guessing which flavor was meant is worse than asking.
+
+### The key is spelled `Flavor:`, exactly
+
+`Flavour:`, `flavor:`, and `Flavor :` match no marker. Left undetected, the project reads as *unflavored* — the pipeline runs happily with core defaults and nothing anywhere says a flavor was intended, which is the worst of both outcomes.
+
+So a near-miss of the key is a **hard stop**, not a warning, in every phase that reads the marker. `scripts/validate.js` applies the same rule to this repository's own `ARCHITECTURE.md`.
+
+### No auto-detection
 
 No marker means no flavor: the pipeline behaves exactly as it does without one, with no extra prompts and no extra files.
 

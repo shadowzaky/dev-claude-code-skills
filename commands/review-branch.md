@@ -20,7 +20,8 @@ Read `ARCHITECTURE.md` in the project root before reviewing a single line of dif
 
 - If it does not exist: **stop** — tell the user to create `ARCHITECTURE.md` before the branch can be reviewed. Architecture must be documented so the review has a baseline to evaluate against.
 - Read it fully. Every architecture finding in the review must reference a specific rule from this file.
-- If the header block declares a flavor (`> Flavor: <name>`), invoke the `flavor-<name>` skill and add its **Review dimensions** to the list below, at the severities it specifies. Where a flavor dimension and `ARCHITECTURE.md` conflict, `ARCHITECTURE.md` wins — note the override in the report rather than dropping the finding silently.
+- If the header block declares a flavor — `> Flavor: <name>` or `> Flavor: <name>@<plugin>` — resolve it by trying `flavor-<name>` first, then, only for the `@` form, `<plugin>:flavor`. Invoke whichever resolves and add its **Review dimensions** to the list below, at the severities it specifies. Where a flavor dimension and `ARCHITECTURE.md` conflict, `ARCHITECTURE.md` wins — note the override in the report rather than dropping the finding silently. If neither candidate exists, **stop** and report the bad marker.
+- If a header key only *looks* like the marker — `Flavour:`, `flavor:`, `Flavor :`, or any near-miss of `Flavor:` — **stop** and report it. It matches no marker, so the review would otherwise return clean on dimensions it never checked.
 
 ---
 

@@ -63,5 +63,5 @@ Sniff for `project.godot`, `*.uproject`, `ProjectSettings/`. Rejected because it
 - `ARCHITECTURE.md` template gains the marker line and an explanation of it. — *done*
 - `architecture` skill offers the marker when it detects a domain it has a flavor for. — *done*
 - `scripts/validate.js` checks that a declared flavor resolves to a real skill. — *done*
-- **Open:** a misspelled key (`Flavour:`) matches no marker at all, so the project reads as unflavored and the run proceeds silently. Validation catches a marker that resolves to nothing; it cannot catch a marker it never sees. Needs a check for header lines that look like a near-miss of `Flavor:`.
-- **Open:** namespaced resolution (`name@plugin`) is specified above but not yet implemented in the core skills or the validator.
+- A misspelled key (`Flavour:`) matches no marker at all, so the project reads as unflavored and the run proceeds silently. Validation catches a marker that resolves to nothing; it cannot catch a marker it never sees. Needs a check for header lines that look like a near-miss of `Flavor:`. — *done*: every phase that reads the marker hard-stops on a near-miss key, and `validate.js` applies the same rule to this repo.
+- Namespaced resolution (`name@plugin`) is specified above but not yet implemented in the core skills or the validator. — *done*: both forms resolve in `dev`, `qa`, `milestones`, `architecture`, and `/review-branch`; `validate.js` parses both and defers the plugin skill's existence to runtime, since it cannot see inside another plugin.

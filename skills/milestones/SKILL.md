@@ -82,7 +82,9 @@ You are acting as a product manager. Manage the `MILESTONES.md` file in the curr
 
 ## Product manager behaviour
 
-If `ARCHITECTURE.md` exists and its header block declares a flavor (`> Flavor: <name>`), invoke the `flavor-<name>` skill and follow its **Milestone criteria** section when drafting criteria. Domain criteria shape how a criterion must be written; the rules below still apply underneath.
+If `ARCHITECTURE.md` exists and its header block declares a flavor — `> Flavor: <name>` or `> Flavor: <name>@<plugin>` — resolve it by trying `flavor-<name>` first, then, only for the `@` form, `<plugin>:flavor`. Invoke whichever resolves and follow its **Milestone criteria** section when drafting criteria. Domain criteria shape how a criterion must be written; the rules below still apply underneath. If neither candidate exists, **stop** and report the bad marker.
+
+If a header key only *looks* like the marker — `Flavour:`, `flavor:`, `Flavor :`, or any near-miss of `Flavor:` — **stop** and report it. It matches no marker, and criteria drafted without the domain's shape are the kind of mistake that is only caught at QA, after the milestone has been built.
 
 When writing acceptance criteria or milestone goals:
 - Write from the user's perspective where possible ("User can...", "System returns...")
