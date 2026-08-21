@@ -4,12 +4,35 @@ description: >
   QA skill for validating a completed milestone: verifies all tests cover business rules,
   discovers and documents rules in BUSINESS_RULES.md, runs the full test suite, validates
   acceptance criteria are met, marks the milestone COMPLETED, delivers a QA report,
-  and offers to archive it to milestones-archived.md.
+  and offers to archive it to milestones-archived.md. Also runs a rule-intake mode that
+  records a single proposed business rule with no milestone involved — this is how /fix
+  hands over an invariant a bug revealed, since this skill owns BUSINESS_RULES.md.
   Triggers when user says "qa milestone", "test milestone", "validate milestone",
-  "run qa", "/qa", or asks to sign off on the active milestone.
+  "run qa", "/qa", "record this business rule", or asks to sign off on the active milestone.
 ---
 
 You are acting as a QA engineer. Your job is not to write features — it is to verify that what was built is correct, complete, and well-tested against the business rules. Work methodically through each step before moving to the next.
+
+---
+
+## Step 0 — Which mode is this?
+
+This skill runs in two modes. Decide before Step 1, because the prerequisites differ.
+
+**Milestone validation** — the default. A milestone has been built and needs signing off. Continue to Step 1.
+
+**Rule intake** — invoked with a *proposed business rule* and no milestone to validate. This is how `/fix` records an invariant a bug revealed: `BUSINESS_RULES.md` is owned by this skill, so `/fix` proposes and this skill writes. A user may also invoke it directly to record a rule.
+
+In rule intake mode, **skip Steps 1a and 1c through 9 entirely** — there is no milestone, no acceptance criteria, and nothing to mark `[COMPLETED]`. Do this instead:
+
+1. Read `BUSINESS_RULES.md`. If it does not exist, create it with the standard header and section structure.
+2. Read the proposed rule, the behaviour it constrains, and the test that enforces it.
+3. **Check it against every existing rule.** If it contradicts one, **stop** and report both — either the existing rule is wrong or the proposed one is, and that is the user's call. Never record two rules that disagree.
+4. If an existing rule already covers the behaviour, say so and record nothing. Add the new test to that rule's **Validated by** line instead — a second enforcer of an existing rule is not a new rule.
+5. Otherwise assign the next free `BR-XXX` — never renumber existing rules, since ADRs and reports cite them by number — and write the entry in the house format: **Rule**, **Rationale**, **Validated by**.
+6. Place it in the section its subject belongs to. Numbers need not be contiguous within a section.
+7. Update the header's `Last updated` and `Updated by` lines.
+8. Report the rule as written, with its number, and stop. **Do not touch `MILESTONES.md`.**
 
 ---
 
@@ -28,7 +51,9 @@ Read `MILESTONES.md`.
 Read `ARCHITECTURE.md`. If it does not exist: **stop** — tell the user:
 > No `ARCHITECTURE.md` found. Run `/architecture` to document the project architecture, then re-run `/qa`.
 
-If the header block declares a flavor (`> Flavor: <name>`), invoke the `flavor-<name>` skill and run its **QA checks** section in addition to the steps below. Where a flavor check and `ARCHITECTURE.md` conflict, `ARCHITECTURE.md` wins — state the override once. If no such skill exists, **stop** and report the bad marker.
+If the header block declares a flavor — `> Flavor: <name>` or `> Flavor: <name>@<plugin>` — resolve it by trying `flavor-<name>` first, then, only for the `@` form, `<plugin>:flavor`. Invoke whichever resolves and run its **QA checks** section in addition to the steps below. Where a flavor check and `ARCHITECTURE.md` conflict, `ARCHITECTURE.md` wins — state the override once. If neither candidate exists, **stop** and report the bad marker.
+
+If a header key only *looks* like the marker — `Flavour:`, `flavor:`, `Flavor :`, or any near-miss of `Flavor:` — **stop** and report it. It matches no marker, so the alternative is signing off a milestone whose domain checks never ran, with nothing in the QA report saying so.
 
 ### 1c. Check BUSINESS_RULES.md
 Look for `BUSINESS_RULES.md` in the project root.
@@ -229,6 +254,38 @@ If the user says **yes**:
 ```
 
 If the user says **no**: leave `MILESTONES.md` as-is with `[COMPLETED]` marker.
+
+---
+
+## Step 8b — Record the findings
+
+**Runs on every QA pass, archived or not, findings or none.** No gate, no prompt.
+
+The QA report in Step 7 is delivered into a conversation and then gone. That is fine for signing off one milestone and useless across several — nothing accumulates, so nothing can be noticed. This step is what makes `qa-retro` possible: a pattern only exists if what QA caught was written down each time.
+
+Append a section to `qa-findings.md` in the project root (create it if absent — lowercase, derived, owned by this skill):
+
+```markdown
+## <Milestone Name> — YYYY-MM-DD
+
+- `missing-test` — criterion 3 had no covering test; added `tests/auth.spec.ts::rejects expired token`
+- `weak-assertion` — existing test checked status only, not response body
+- `undocumented-rule` — BR-018 surfaced during QA rather than during dev
+- `criterion-unmet` — criterion 2 failed on first run; fixed in-pass
+- `flaky` — `tests/sync.spec.ts` passed only on retry
+```
+
+**Use a stable category slug.** Free text alone cannot be clustered — the same mistake described three different ways reads as three different problems. Reuse an existing slug whenever it fits; add a new one only for a genuinely new kind of finding. The slugs above are the starting set.
+
+If the pass found nothing — every criterion covered, no test added, no rule surfaced late — record that too:
+
+```markdown
+## <Milestone Name> — YYYY-MM-DD
+
+- `clean` — no findings
+```
+
+A clean pass is data. Without it, `qa-findings.md` implies every milestone was troubled, and the denominator that tells a pattern from a coincidence is lost.
 
 ---
 

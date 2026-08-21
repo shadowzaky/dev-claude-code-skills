@@ -48,6 +48,7 @@ git remote -v
 | `ARCHITECTURE.md` | | `architecture` |
 | `MILESTONES.md` | | `milestones` |
 | `BUSINESS_RULES.md` | | `qa`, on its first pass |
+| `qa-findings.md` | | `qa`, on its first pass — like `BUSINESS_RULES.md`, missing is correct until QA has run |
 | `docs/adr/` | | `adr-create` |
 | `docs/product/` | | `product-docs` |
 | `idea-backlog.md` | | `idea-backlog` |
@@ -111,7 +112,7 @@ Order the steps by dependency, not by value:
 5. **Backlog** — capture what is not being built yet.
 6. **Product docs** — describes shipped behaviour, so it is the most useful once everything else is in place.
 
-`BUSINESS_RULES.md` is not in the list. It is created by the first `/qa` pass, from real acceptance criteria — writing it up front means inventing rules nobody agreed to.
+`BUSINESS_RULES.md` and `qa-findings.md` are not in the list. Both are created by the first `/qa` pass — one from real acceptance criteria, the other from what that pass actually found. Writing either up front means inventing rules nobody agreed to, or findings nobody observed.
 
 Ask which steps to run. Skipping is fine and expected; a repo that only wants `ARCHITECTURE.md` and milestones is a legitimate setup.
 

@@ -97,7 +97,7 @@ Scan the project to understand its actual structure before writing a single word
 6. Read any existing config files: `tsconfig.json`, `jest.config.js`, `.eslintrc`, `docker-compose.yml`, ORM config, etc.
 7. Check for any existing `ARCHITECTURE.md`, `CLAUDE.md`, `README.md` — read them for prior decisions.
 8. Check the test directory structure and read 1–2 test files.
-9. Check whether a flavor applies. If an existing `ARCHITECTURE.md` declares one (`> Flavor: <name>`), invoke `flavor-<name>` and include its **Architecture extensions** sections in the document. If none is declared but the codebase clearly belongs to a domain a flavor covers, **suggest** it — never activate one on the user's behalf (ADR-0001).
+9. Check whether a flavor applies. If an existing `ARCHITECTURE.md` declares one — `> Flavor: <name>` or `> Flavor: <name>@<plugin>` — resolve it by trying `flavor-<name>` first, then, only for the `@` form, `<plugin>:flavor`. Invoke whichever resolves and include its **Architecture extensions** sections in the document; if neither exists, **stop** and report the bad marker. If a header key only *looks* like the marker — `Flavour:`, `flavor:`, `Flavor :`, or any near-miss of `Flavor:` — **stop** and report it rather than treating the project as unflavored; this skill owns the file, so it is the right place to get the spelling fixed. If none is declared but the codebase clearly belongs to a domain a flavor covers, **suggest** it — never activate one on the user's behalf (ADR-0001).
 10. Read `docs/adr/` if it exists. Every `Accepted` ADR is binding — `ARCHITECTURE.md` must be consistent with all of them. If the code contradicts an accepted ADR, document the ADR's rule and flag the violation to the user; do not document the violation as the convention.
 
 ---
@@ -150,7 +150,9 @@ Write the file to the project root. Use the structure below exactly — do not o
 # Architecture
 
 > Last updated: YYYY-MM-DD
-> Flavor: <name>          <!-- omit this line entirely when no flavor applies -->
+> Flavor: <name>          <!-- or <name>@<plugin> for a flavor from a separate plugin.
+                              Omit the line entirely when no flavor applies. The key is
+                              spelled `Flavor:` exactly — a near-miss matches nothing. -->
 
 ## Stack
 

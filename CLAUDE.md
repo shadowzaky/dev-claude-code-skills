@@ -69,11 +69,15 @@ architecture → adr-create → adr-review → ARCHITECTURE.md updated
 idea-backlog → milestones → dev → qa → product-docs → /ship
 /sprint  →     milestones → dev → qa
 /grind   →                  dev → qa (no Dev→QA gate; batch mode)
+/fix     →     bug path, outside the loop — proposes rules to qa, never writes MILESTONES.md
+/release →     completed + archived milestones → CHANGELOG.md
 /status  →     read-only report across every spec file
 ```
 
 - `dev` and `qa` both hard-stop if `ARCHITECTURE.md` is missing — they direct users to `/architecture`
 - `qa` creates/updates `BUSINESS_RULES.md`; `learn-from-pr` and `backfill-pr-rules` read it before writing code rules to avoid contradictions
+- `qa` Step 8b appends to `qa-findings.md` on every pass — including a `clean` entry when nothing was found, since the denominator is what separates a pattern from a coincidence. `qa-retro` is the only consumer, and hard-stops below two milestones
+- `qa-retro` borrows `learn-from-pr` Step 3's scope classification rather than restating it — one classification, one home. It writes rules in `learn-from-pr`'s format to the same targets, and hands a missing *business* invariant to `qa`'s rule-intake mode instead of writing `BUSINESS_RULES.md` itself
 - `dev` Step 5 runs `/review-branch` before QA handoff
 - `milestones` skill manages `[ACTIVE]`; `qa` skill sets `[COMPLETED]`; milestones skill never sets `[COMPLETED]` itself
 - `adr-create` writes ADRs to `docs/adr/` as `Proposed` only; `adr-review` is the sole writer of `Accepted`/`Rejected`/`Superseded`, and on acceptance propagates the decision into `ARCHITECTURE.md`
@@ -81,10 +85,12 @@ idea-backlog → milestones → dev → qa → product-docs → /ship
 - ADRs are immutable once accepted — changed decision means a new superseding ADR, never an edit
 - `idea-backlog` owns `idea-backlog.md` and never writes `MILESTONES.md` — promotion invokes the `milestones` skill, which then hands back so the idea line can be moved to `## Promoted`
 - `product-docs` owns `docs/product/` **in the target repo**; `qa` Step 9 offers to run it when a milestone changed user-visible behaviour
-- File naming rule: skills hard-stop on `UPPERCASE.md` files; staging and derived files are lowercase (`idea-backlog.md`, `milestones-archived.md`, `docs/product/`)
+- File naming rule: skills hard-stop on `UPPERCASE.md` files; staging and derived files are lowercase (`idea-backlog.md`, `milestones-archived.md`, `docs/product/`). **One stated exception:** `CHANGELOG.md` is derived but uppercase — it is the only generated artifact with an audience outside the project, and its consumers expect the conventional name
+- `/release` owns `CHANGELOG.md` and reads `MILESTONES.md`, `milestones-archived.md`, `BUSINESS_RULES.md`, and `docs/product/` without writing any of them. Released sections are immutable once written — a correction goes in the next release, never as an edit, mirroring how accepted ADRs are superseded rather than edited
 - Flavors are skills named `flavor-<name>`, activated by a `> Flavor: <name>` marker in a project's `ARCHITECTURE.md` (ADR-0001). Each core skill reads exactly one section of the flavor; project `ARCHITECTURE.md` overrides flavor rules (ADR-0002). Core skills must never contain domain vocabulary — only marker resolution
 - `setup-loop` onboards an existing repo — it surveys and sequences, then delegates every file to its owning skill; it writes nothing but `.gitignore` fixes
 - `architecture` Step 0 branches on greenfield (empty/scaffold-only repo → design from intent, record stack choices as ADRs) vs existing codebase (read and document)
+- `/fix` is the bug path: it applies a feature-versus-bug test and refuses feature work, requires a regression test observed failing before the fix, and checks `BUSINESS_RULES.md` on every run. It never writes `MILESTONES.md`, and it never writes `BUSINESS_RULES.md` — a new rule is handed to `qa`, which owns the file and assigns the `BR-XXX`
 - `/ship` is the only command that commits, pushes, or opens a PR; `/status` is strictly read-only
 - Full methodology docs live in `docs/` — update them when the pipeline changes
 - This repo dogfoods its own pipeline: `idea-backlog.md` at the root holds unbuilt ideas for the plugin itself
