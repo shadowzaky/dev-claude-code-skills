@@ -22,13 +22,13 @@ node scripts/uninstall.js
 
 | Content type | Location in repo | Where Claude Code reads it |
 |---|---|---|
-| Skills | `skills/<name>/SKILL.md` | Copied to `~/.claude/skills/` by postinstall — the copy wins over plugin discovery |
+| Skills | `skills/<name>/SKILL.md` | Copied to `~/.claude/skills/` by postinstall — the copy is the only thing that loads |
 | Commands | `commands/<name>.md` | Copied to `~/.claude/commands/` by postinstall |
-| Plugin manifest | `.claude-plugin/plugin.json` | Read from `installPath` by Claude Code |
+| Plugin manifest | `.claude-plugin/plugin.json` | Nothing. The registration is inert (ADR-0005) |
 
-The `installPath` in `installed_plugins.json` points to the root of this repo (wherever npm installed it).
+**Copies are not a shortcut around plugin loading — they are the whole mechanism.** Plugin-registered skills do not load in this version of Claude Code (ADR-0005), and Claude Code evicts this package's hand-written `installed_plugins.json` entry on startup. So an edit in this repo has no effect until postinstall runs again. The `PostToolUse` hook on `git push` re-runs it. Between an edit and the next push, `~/.claude/skills/` is stale by design — run `node scripts/postinstall.js` to sync sooner.
 
-**A skill in `~/.claude/skills/` shadows the plugin's copy of the same name.** That is why postinstall copies them: the copy is what runs, so an edit in this repo has no effect until postinstall runs again. The `PostToolUse` hook on `git push` re-runs it. Between an edit and the next push, `~/.claude/skills/` is stale by design — run `node scripts/postinstall.js` to sync sooner.
+Flavors are the exception: they install into a *project's* own `.claude/skills/`, which loads without a restart and stays scoped to that repo (ADR-0005).
 
 `~/.claude/.claude-code-skills.json` records which skill directories this package installed. Pruning on later runs is limited to that list, so a hand-written user skill is never removed.
 

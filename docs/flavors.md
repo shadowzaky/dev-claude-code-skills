@@ -34,14 +34,16 @@ Core loop skills read the marker from the `ARCHITECTURE.md` they already load an
 
 ### The two forms
 
-A flavor may ship inside this package or as a separate plugin, and Claude Code namespaces plugin skills as `/plugin-name:skill-name`. The marker accepts both:
+The marker accepts two forms, because ADR-0001 anticipated flavors shipping either inside this package or as a separate plugin:
 
 | Marker | Resolves to |
 |---|---|
 | `> Flavor: game-dev` | `flavor-game-dev` — a skill in this package |
 | `> Flavor: game-dev@game-pack` | `game-pack:flavor` — a skill from the `game-pack` plugin |
 
-**The bare form is tried first, for both forms.** A marker written `game-dev@game-pack` resolves to `flavor-game-dev` if that skill exists here, and only falls through to `game-pack:flavor` when it does not. That is what keeps the marker stable while a flavor moves between the package and a plugin — the declaration does not change when the packaging does.
+**The bare form is tried first, for both forms.** A marker written `game-dev@game-pack` resolves to `flavor-game-dev` if that skill exists here, and only falls through to `game-pack:flavor` when it does not.
+
+**The `@` form no longer has a working destination.** ADR-0005 established that plugin-provided skills do not load at all, so `game-pack:flavor` resolves to nothing and the fallback always hard-stops. Every usable flavor is authored in this package and installed into a project as a copy. The `@` form is kept only so an `ARCHITECTURE.md` already carrying one keeps working via the bare-form match (BR-011) — do not write a new marker that way.
 
 If neither candidate resolves, every phase **stops**. Guessing which flavor was meant is worse than asking.
 
@@ -123,11 +125,34 @@ Core skills need no change to support a new flavor. They resolve `flavor-<marker
 
 ---
 
+## Installing a flavor into a project
+
+The marker declares a flavor. It does not deliver one — the skill has to exist in the project's own `.claude/skills/` before any phase can resolve it (ADR-0005).
+
+```bash
+node <pluginRoot>/scripts/install-flavor.js <name> --target .
+```
+
+`<pluginRoot>` is recorded in `~/.claude/.claude-code-skills.json`. The `architecture` skill offers this automatically after writing a marker; running it by hand is for upgrades and for repos set up before the flavor existed.
+
+What it does:
+
+| | |
+|---|---|
+| **Writes** | `.claude/skills/flavor-<name>/` and `.claude/flavor.json` in the target project, and nowhere else (BR-021) |
+| **Loads** | Immediately — project-level skills need no restart |
+| **Re-runs** | Idempotent. Upgrades in place, removes files orphaned by the previous version, and never touches a skill it did not install |
+| **Refuses** | Any target inside `~/.claude`, which would make the flavor active in every repo on the machine |
+
+**The copies are committed to the consuming repository.** A clone gets the flavor with no extra step, which is the whole reason they are tracked rather than ignored. The cost, accepted deliberately in ADR-0005, is generated files in the repo and drift between projects that install at different versions. `flavor.json` records `version` and `sha` so a stale copy can be identified — nothing forces it to be refreshed.
+
+---
+
 ## Open questions
 
 - **Composition.** One marker, one flavor. Two flavors on one project would need list syntax and an overlap ruling; deferred until something needs it.
 - **Non-overridable rules.** Whether a flavor may mark specific rules as immune to project override. ADR-0002 says no for now.
-- **Drift.** Nothing audits a project that has overridden most of its flavor and only nominally still uses it.
+- **Drift.** Nothing audits a project that has overridden most of its flavor and only nominally still uses it. `flavor.json` now makes *version* drift visible, but nothing checks a copy against the contract once it is in another repo — the residual gap named in BR-005.
 
 ---
 

@@ -9,7 +9,7 @@
 - **Dependencies:** none, and this is deliberate — see [Layer rules → Scripts](#scripts)
 - **Distribution:** npm package installed from git, `private: true`, plugin ID `claude-code-skills@npm`
 - **Test framework:** none. `npm test` runs `scripts/validate.js` — see [Testing strategy](#testing-strategy)
-- **Host:** Claude Code. Skills are discovered from `installPath`; commands are copied into `~/.claude/commands/`
+- **Host:** Claude Code. Skills load from copies on disk — `~/.claude/skills/` for this package's own, a project's own `.claude/skills/` for flavors. Plugin `installPath` registration delivers no skills at all (ADR-0005). Commands are copied into `~/.claude/commands/`
 
 There is no application runtime, no server, no database, and no HTTP surface. The deliverable is prose that Claude Code executes.
 
@@ -25,7 +25,7 @@ commands/<name>.md       Slash commands. Plain markdown, no frontmatter. Copied 
                          ~/.claude/commands/ by postinstall. Orchestration only.
 scripts/*.js             Install, uninstall, validation. Node built-ins only, zero dependencies.
 docs/*.md                Methodology and reference for humans. Never read by a skill at runtime.
-.claude-plugin/          plugin.json manifest. Read by Claude Code from installPath.
+.claude-plugin/          plugin.json manifest. Registered but inert — delivers no skills (ADR-0005).
 ```
 
 Root files:
@@ -144,9 +144,9 @@ Full reference: [`docs/artifacts.md`](docs/artifacts.md).
 3. `.claude-code-skills.json` — manifest of the skill directories this package installed.
 4. `plugins/installed_plugins.json` and `settings.json` — registers and enables `claude-code-skills@npm` with `installPath` set to this repo.
 
-**The copies are what run.** Plugin skills are namespaced `/plugin-name:skill-name` and *coexist* with same-named unprefixed skills rather than overriding them — so a copy in `~/.claude/skills/` does not shadow the plugin's, it simply provides the unprefixed name that gets invoked. The copy is authoritative at runtime, the repo authoritative in git, and an edit here does nothing until postinstall runs again.
+**The copies are what run — and they are the only thing that runs.** Plugin-registered skills do not load in this version of Claude Code: a plugin that is installed, enabled, marketplace-cached, and shipping well-formed skills contributes none of them to a session, after a restart (ADR-0005). Skill delivery happens entirely through copies on disk. The copy is authoritative at runtime, the repo authoritative in git, and an edit here does nothing until postinstall runs again.
 
-**Unverified:** no `claude-code-skills:*` namespaced skill has been observed in a session, and `~/.claude/plugins/cache/` holds only marketplace-installed plugins. The hand-written `installed_plugins.json` registration may be inert, with the copies doing all the work (ADR-0003 follow-up).
+**Step 4 is inert, and known to be.** Claude Code evicts the hand-written `claude-code-skills@npm` entry from `installed_plugins.json` on startup, leaving `settings.json` naming a plugin that is no longer registered. The registration is retained for now only because removing it is a separate decision (ADR-0005 follow-up).
 
 The push hook (`.claude/settings.json`, `PostToolUse` on `git push`) re-runs postinstall, which keeps the two in sync at the point work leaves the machine. Between an edit and the next push, the copy is stale by design.
 
@@ -154,7 +154,9 @@ The push hook (`.claude/settings.json`, `PostToolUse` on `git push`) re-runs pos
 
 `scripts/uninstall.js` reverses all four, removing skills by manifest for the same reason. The plugin ID appears in both scripts and **must be kept in sync**.
 
-Skills and commands take effect on Claude Code restart. There is no hot reload.
+User-level skills and commands — everything postinstall writes to `~/.claude/` — take effect on Claude Code restart. There is no hot reload for those.
+
+**Project-level skills are different.** A skill in a repository's own `.claude/skills/<name>/SKILL.md` loads into the running session without a restart, and is scoped to that repository. This is the mechanism flavors install through (ADR-0005), and the absence of a restart is what makes a flavor usable in the same session that installs it.
 
 ---
 
@@ -246,9 +248,12 @@ Rules in this file state *what*. The *why* lives in `docs/adr/`. Accepted ADRs a
 |---|---|---|
 | [0001](docs/adr/0001-flavor-activation-marker.md) | Declare flavors with a `> Flavor: <name>` marker in `ARCHITECTURE.md` | Flavor activation, marker resolution |
 | [0002](docs/adr/0002-project-architecture-overrides-flavor.md) | A project's `ARCHITECTURE.md` overrides flavor rules | Precedence in every loop skill |
-| [0003](docs/adr/0003-flavors-ship-as-separate-plugins.md) | Flavors ship as plugins from this repo, enabled per project | Distribution, install model, `plugins/` layout |
+| ~~[0003](docs/adr/0003-flavors-ship-as-separate-plugins.md)~~ | ~~Flavors ship as plugins from this repo, enabled per project~~ — superseded by 0005 | Nothing; retained for the record |
+| [0005](docs/adr/0005-flavors-install-as-project-copies.md) | Flavors install as committed copies in the consuming project's `.claude/skills/` | Distribution, install model, flavor scoping |
 
-A flavor plugin must **not** copy its skills into `~/.claude/skills/` the way this package does — that would make them globally active and defeat per-project enablement (ADR-0003).
+A flavor is installed by copying its skills into the **consuming project's** `.claude/skills/`, committed there alongside a `.claude/flavor.json` recording flavor name, version, and source sha (ADR-0005). It must **not** be copied into `~/.claude/skills/` the way this package's own skills are — that would make it globally active and defeat per-project scoping, putting domain skills in front of every unrelated repo on the machine.
+
+Whatever invokes that install must pass the flavor name **read from the marker**, never a literal — a core skill containing a concrete flavor name violates BR-004 and fails `npm test`.
 
 Rules derived from an ADR cite it inline, e.g. *(ADR-0001)*.
 
