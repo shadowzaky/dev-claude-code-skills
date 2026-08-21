@@ -10,3 +10,4 @@ Status: **Proposed** (awaiting `/adr-review`) · **Accepted** · **Rejected** ·
 | [0001](0001-flavor-activation-marker.md) | Declare flavors with a marker in ARCHITECTURE.md | Accepted | 2026-08-20 |
 | [0002](0002-project-architecture-overrides-flavor.md) | Project ARCHITECTURE.md overrides flavor rules | Accepted | 2026-08-20 |
 | [0003](0003-flavors-ship-as-separate-plugins.md) | Ship domain flavors as separate plugins, enabled per project | Accepted | 2026-08-20 |
+| [0004](0004-plugin-skill-loading-unverified.md) | Plugin-registered skills do not load; ADR-0003's premise is unconfirmed | Proposed | 2026-08-20 |
