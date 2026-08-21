@@ -1,7 +1,7 @@
 # Business Rules
 
 > Last updated: 2026-08-20
-> Updated by: rule intake — ADR-0005 acceptance (BR-021 added; BR-002, BR-005, BR-011 revised)
+> Updated by: rule intake — BR-021 rewritten after its carve-out was found to license a live bug
 
 Invariants this plugin must enforce regardless of how any individual skill is written.
 
@@ -56,10 +56,13 @@ reviewer knows to look.
 **Rationale:** This is the one failure the rest of the flavor system cannot catch. An unresolvable marker is loud; a *misspelled key* matches no marker at all, so the project reads as unflavored and every phase runs core defaults with nothing anywhere recording that a flavor was intended. (ADR-0001)
 **Validated by:** `scripts/validate.js` — near-miss detector over the header block, on this repo's own `ARCHITECTURE.md`; skill-side behaviour is **manual** (hook text in all five consumers). Negative-tested on a scratch copy: all four variants above error, while `Owner:`, `Version:`, `Status:`, `Flags:`, `Flow:`, `Layer:` and `Last updated:` stay clean, and a near-miss below the header block is correctly out of scope.
 
-### BR-021: Installing a flavor writes only inside the target project
-**Rule:** The flavor install writes to the target project's `.claude/` and nowhere else. It never writes to `~/.claude/skills/`, `~/.claude/commands/`, `~/.claude/settings.json`, or any path outside the project it was pointed at.
-**Rationale:** Scoping is the entire reason flavors install this way. A flavor that reaches `~/.claude/` becomes active in every repository on the machine, which puts domain skills in front of projects that have nothing to do with the domain — the failure ADR-0003 was written to avoid and ADR-0005 preserves by a different route. This does **not** constrain `postinstall.js`: the core loop skills are meant to be global and installing them user-level is correct. The rule binds flavor install only. (ADR-0005)
-**Validated by:** not yet enforced — the install script does not exist. Becomes checkable when `scripts/install-flavor.js` lands; until then this is **manual**, and it is the rule most likely to be broken by reusing `postinstall.js`'s copy helper, which targets `~/.claude/` by construction.
+### BR-021: No flavor is ever installed user-level
+**Rule:** A flavor exists only inside a consuming project's `.claude/`. `scripts/install-flavor.js` writes there and nowhere else, and `scripts/postinstall.js` — which does install the core loop skills into `~/.claude/skills/` — must skip every `flavor-*` directory. Neither script may put a flavor in `~/.claude/skills/`, `~/.claude/commands/`, or `~/.claude/settings.json`.
+**Rationale:** Scoping is the entire reason flavors install this way. Anything under `~/.claude/` is active in every repository on the machine, which puts domain skills in front of projects that have nothing to do with the domain — the failure ADR-0003 was written to avoid and ADR-0005 preserves by a different route. (ADR-0005)
+
+> **This rule was first written with a carve-out saying it did not constrain `postinstall.js`.** That was wrong, and wrong in the direction that costs most: `postinstall.js` was copying *every* `skills/` directory user-level, flavors included, so `flavor-game-dev` was globally active and a project that never opted in still saw it. The carve-out read as permission for the exact bug it was hiding. Found during the Game-Dev Package dev pass, 2026-08-20, by checking a path that should not have existed. The rule now names both scripts, because a rule that exempts a component is a rule that stops being checked against it.
+
+**Validated by:** **behaviour, not assertion.** `install-flavor.js` refuses any target inside `~/.claude` (realpath-compared, so a symlink cannot slip past) and `postinstall.js` skips `flavor-*`, with manifest-driven pruning that removes copies an earlier version installed — verified 2026-08-20: `flavor-game-dev` disappeared from `~/.claude/skills/` and the manifest dropped to 13 core skills. But **`npm test` asserts none of this.** Both guards were confirmed by hand and nothing would catch their removal. Closing that needs a `validate.js` check that `postinstall.js` skips the flavor prefix and that `install-flavor.js` keeps its home guard.
 
 ---
 
