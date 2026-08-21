@@ -2,32 +2,31 @@
 
 ## Game-Dev Package
 
-> Move the game-dev flavor into its own plugin, distributed from this repository as a marketplace entry, so projects enable it individually while the contract and its implementation stay versioned together.
+> Let a project that declares the game-dev flavor get that flavor's skills into its own repository with one command, usable in the same session, without putting game vocabulary in front of any other project on the machine.
 
-**Depends on:** Flavor Resolution Hardening — extracting the flavor before namespaced resolution works leaves the marker pointing at a skill the core cannot resolve.
-
-**BLOCKED — 2026-08-20.** The verification ran and came back bad. An installed, enabled, marketplace-sourced plugin (`caveman`) with five well-formed skills contributes **none** of them to a session, while the 13 skills that do load are exactly those copied into `~/.claude/skills/`. Plugin registration appears to load no skills at all — including via the marketplace route ADR-0003 chose *because* it was believed to work.
-
-Extracting the flavor on this evidence would make a working flavor unreachable, so the move is not being made. Not ruled out: neither `plugin.json` declares a skills path, so auto-discovery may simply not be a thing. Settling it needs a Claude Code **restart** to observe — see ADR-0004, which holds the evidence and the experiment. Resolve that ADR via `/adr-review` before resuming this milestone.
+**Unblocked 2026-08-20 by ADR-0005.** This milestone was blocked because plugin-registered skills turned out not to load, which killed the marketplace route ADR-0003 had chosen. ADR-0005 replaced it: flavors install as committed copies in the consuming project's `.claude/skills/`, which hot-loads and is genuinely project-scoped. The goal, criteria, and tasks below are rewritten against that decision — `marketplace.json` and the move to `plugins/game-dev/` are gone, and `flavor-game-dev` stays where it is.
 
 ### Acceptance Criteria
 
-- [ ] Installing the plugin leaves it disabled; no project behaves differently until it opts in through `.claude/settings.json`
-- [ ] A project that enables it gets the flavor and its companion skills, namespaced; a project that does not sees no trace of them
-- [ ] `> Flavor: game-dev@<plugin>` activates the flavor through the loop's normal resolution
-- [ ] The flavor plugin does not copy its skills into `~/.claude/skills/` — verified by installing it and confirming no unprefixed skill appears
-- [ ] The root package ships no flavor implementation, and `npm test` still enforces the contract for anything it does ship
-- [ ] The six-section contract is published in a form an external flavor can be checked against
+- [ ] Running the install in a project that declares a flavor puts that flavor's skills in the project's `.claude/skills/`, and they are usable in the same session with no restart
+- [ ] A project that has not run the install sees no trace of the flavor — no skills, no commands, no domain vocabulary anywhere in the loop
+- [ ] An installed project records which flavor and which version it holds, so a stale copy is identifiable without diffing files against the source
+- [ ] Re-running the install upgrades an already-installed project in place, and leaves no orphaned file from the previous version
+- [ ] Installing a flavor never writes to `~/.claude/skills/` — verified by installing and confirming no new skill appears outside the project
+- [ ] The install refuses to delete or overwrite a skill in the target project that it did not itself install
+- [ ] A core skill or command naming a concrete flavor still fails `npm test` after the invocation path exists (BR-004 survives the change)
+- [ ] `> Flavor: game-dev` activates the installed flavor through the loop's normal resolution, unchanged from ADR-0001
 
 ### Tasks
 
 - [x] Determine whether `installed_plugins.json` registration loads skills, or whether only the `~/.claude/skills/` copies do — everything below depends on the answer → **only the copies load** (ADR-0004)
-- [ ] Add `marketplace.json` with entries for the root plugin and `./plugins/game-dev`
-- [ ] Move `skills/flavor-game-dev/` to `plugins/game-dev/skills/flavor/` with its own plugin manifest
-- [ ] Add the first companion skill to prove the shape works end to end
-- [ ] Confirm install-then-enable behaviour in a real project, including what a missed enable looks like
-- [ ] Publish the contract as a versioned spec, and decide whether the checker ships with it
-- [ ] Update `docs/flavors.md` and `README.md` for the marketplace install path
+- [ ] Write `scripts/install-flavor.js` — zero-dependency Node (BR-009), copying a named flavor's skills into a target project's `.claude/skills/`
+- [ ] Define and write `.claude/flavor.json` — flavor name, version, source sha — and use it as the manifest that makes pruning safe, mirroring how `postinstall.js` protects a user's own skills
+- [ ] Make re-runs idempotent: upgrade in place, prune only what the manifest records, never touch anything else in the target
+- [ ] Add the invocation to `architecture` and `setup-loop`, passing the flavor name read from the marker — never a literal, or BR-004 fails the build
+- [ ] Extend `scripts/validate.js` to cover the new script and the `flavor.json` shape
+- [ ] Verify end to end in a real game project: install, invoke a flavor skill in the same session, re-run to upgrade
+- [ ] Update `docs/flavors.md` and `README.md` for the copy-install path, replacing the marketplace instructions
 
 ---
 
