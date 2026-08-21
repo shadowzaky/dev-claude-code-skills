@@ -393,6 +393,35 @@ if (pkg) {
   }
 }
 
+// --- Scripts -----------------------------------------------------------------
+
+// Skills tell users to run these by path. A renamed or deleted script turns that instruction
+// into a dead end, and the cross-reference check below only covers `/slash` names.
+const REQUIRED_SCRIPTS = ['install-flavor.js', 'postinstall.js', 'uninstall.js', 'validate.js'];
+
+// The check above reads package.json, but an empty dependencies block does not stop a script
+// requiring something that was never declared — it just fails at runtime on someone else's
+// machine, mid-install. Every require must be a built-in or a path inside the repo (BR-009).
+const BUILTIN_MODULES = new Set(require('module').builtinModules);
+
+for (const name of REQUIRED_SCRIPTS) {
+  const scriptPath = path.join(repoRoot, 'scripts', name);
+
+  if (!fs.existsSync(scriptPath)) {
+    error(`scripts/${name}`, 'missing — skills and package scripts reference it by path');
+    continue;
+  }
+
+  const source = fs.readFileSync(scriptPath, 'utf8');
+  for (const [, request] of source.matchAll(/require\(\s*['"]([^'"]+)['"]\s*\)/g)) {
+    if (request.startsWith('.')) continue;
+    const root = request.startsWith('node:') ? request.slice(5) : request.split('/')[0];
+    if (!BUILTIN_MODULES.has(root)) {
+      error(`scripts/${name}`, `requires "${request}" — scripts use Node built-ins only (BR-009)`);
+    }
+  }
+}
+
 // --- Cross-references --------------------------------------------------------
 
 // Every `/thing` mentioned in the repo's markdown must resolve to a skill, a
