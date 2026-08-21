@@ -1,8 +1,15 @@
 # ADR-0004: Plugin-registered skills do not load; ADR-0003's premise is unconfirmed
 
-- **Status:** Proposed
+- **Status:** Superseded by ADR-0005
 - **Date:** 2026-08-20
+- **Decided:** 2026-08-20
 - **Deciders:** repo owner
+
+> **Accepted on review 2026-08-20, then superseded the same day.** The observations here were
+> sound and the decision to stop work was correct — it prevented an extraction that would have
+> made a working flavor unreachable. The experiment it demanded was then run, and both innocent
+> explanations failed. [ADR-0005](0005-flavors-install-as-project-copies.md) carries the result.
+> Nothing below has been edited.
 
 <!-- validate: allow-refs playtest -->
 

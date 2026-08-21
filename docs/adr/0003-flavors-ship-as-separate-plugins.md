@@ -1,9 +1,14 @@
 # ADR-0003: Ship domain flavors as separate plugins, enabled per project
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-0005
 - **Date:** 2026-08-20
 - **Decided:** 2026-08-20
 - **Deciders:** repo owner
+
+> **Superseded 2026-08-20 by [ADR-0005](0005-flavors-install-as-project-copies.md).** The premise
+> below — that plugin skills load, namespaced — was taken from documentation and is false in this
+> version of Claude Code. Flavors install as copies in the consuming project's `.claude/skills/`
+> instead. The argument below stands unedited as the record of what was believed and why.
 
 <!-- validate: allow-refs playtest -->
 
