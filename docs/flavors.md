@@ -34,14 +34,16 @@ Core loop skills read the marker from the `ARCHITECTURE.md` they already load an
 
 ### The two forms
 
-A flavor may ship inside this package or as a separate plugin, and Claude Code namespaces plugin skills as `/plugin-name:skill-name`. The marker accepts both:
+The marker accepts two forms, because ADR-0001 anticipated flavors shipping either inside this package or as a separate plugin:
 
 | Marker | Resolves to |
 |---|---|
 | `> Flavor: game-dev` | `flavor-game-dev` — a skill in this package |
 | `> Flavor: game-dev@game-pack` | `game-pack:flavor` — a skill from the `game-pack` plugin |
 
-**The bare form is tried first, for both forms.** A marker written `game-dev@game-pack` resolves to `flavor-game-dev` if that skill exists here, and only falls through to `game-pack:flavor` when it does not. That is what keeps the marker stable while a flavor moves between the package and a plugin — the declaration does not change when the packaging does.
+**The bare form is tried first, for both forms.** A marker written `game-dev@game-pack` resolves to `flavor-game-dev` if that skill exists here, and only falls through to `game-pack:flavor` when it does not.
+
+**The `@` form no longer has a working destination.** ADR-0005 established that plugin-provided skills do not load at all, so `game-pack:flavor` resolves to nothing and the fallback always hard-stops. Every usable flavor is authored in this package and installed into a project as a copy. The `@` form is kept only so an `ARCHITECTURE.md` already carrying one keeps working via the bare-form match (BR-011) — do not write a new marker that way.
 
 If neither candidate resolves, every phase **stops**. Guessing which flavor was meant is worse than asking.
 
