@@ -7,15 +7,19 @@ Every file the skills read or write, who owns it, and what it must contain.
 | File | Owner | Other writers | Committed | Required by |
 |---|---|---|---|---|
 | `idea-backlog.md` | `idea-backlog` | — | yes | — (no skill gates on it) |
-| `ARCHITECTURE.md` | `architecture` | `learn-from-pr` (appends rules) | yes | `dev`, `qa`, `/review-branch`, `/sprint`, `/grind` |
+| `ARCHITECTURE.md` | `architecture` | `learn-from-pr`, `qa-retro` (append rules) | yes | `dev`, `qa`, `/review-branch`, `/sprint`, `/grind` |
 | `docs/adr/` | `adr-create` (writes Proposed) | `adr-review` (status only) | yes | read by `architecture`, `dev`, `/review-branch` |
 | `MILESTONES.md` | `milestones` | `dev` (task boxes), `qa` (`[COMPLETED]`) | yes | `dev`, `qa`, `/grind` |
 | `BUSINESS_RULES.md` | `qa` | — (read by `learn-from-pr`, `backfill-pr-rules`) | yes | `qa` |
 | `milestones-archived.md` | `qa` | — | yes | — |
+| `qa-findings.md` | `qa` | — | yes | `qa-retro` (stops below two milestones) |
 | `docs/product/` | `product-docs` | — | yes | — |
-| `CLAUDE.md` | project | `learn-from-pr` | yes | all |
+| `CHANGELOG.md` | `/release` | — | yes | — |
+| `CLAUDE.md` | project | `learn-from-pr`, `qa-retro` | yes | all |
 
 Naming follows the gate: files a skill hard-stops on are `UPPERCASE.md`; staging and derived files are lowercase.
+
+`CHANGELOG.md` is the one stated exception: derived, but uppercase. It is the only generated artifact with an audience outside the project, and its consumers expect the conventional name. Released sections in it are immutable once written, the way an accepted ADR is superseded rather than edited.
 
 ---
 

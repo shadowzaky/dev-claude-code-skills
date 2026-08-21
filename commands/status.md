@@ -17,6 +17,7 @@ Check for each file. A missing file is a finding, not an error — report it and
 | `docs/product/` | Presence, `Last updated` per file |
 | `idea-backlog.md` | Counts per section |
 | `milestones-archived.md` | How many milestones shipped |
+| `qa-findings.md` | How many QA passes recorded, and whether any category recurs across two or more milestones — that is the threshold at which `/qa-retro` has something to say |
 
 Then read the git state:
 

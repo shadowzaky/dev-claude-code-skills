@@ -233,9 +233,12 @@ These do not sit in the loop but feed it.
 | Skill / command | Role |
 |---|---|
 | `/review-branch` | Full-diff review against `ARCHITECTURE.md` — architecture, SOLID, clean code, KISS, hardcoded strings, i18n, secrets, security, correctness, tests, OpenAPI. Called by dev before QA handoff. |
+| `/fix` | The bug path, outside the loop. Applies a feature-versus-bug test first and refuses feature work; then reproduce, regression test that is seen to fail, fix, `BUSINESS_RULES.md` check. Never touches `MILESTONES.md`; proposes new rules to `qa` rather than writing them. |
+| `/release` | Completed and archived milestones → `CHANGELOG.md`, grouped by git tag, written for readers outside the project and citing the `BR-XXX` rules each milestone introduced. Idempotent; released sections are immutable; excluded milestones are reported with a reason. |
 | `/ship` | Closes the pipeline: branch named from the milestone, conventional commits, PR body built from the goal, acceptance criteria, `BR-XXX` rules, and ADRs. Blocks on secrets, failing tests, and committed local-only files. |
 | `/status` | Read-only report across every spec file — active milestone, tasks left, pending ADRs, drift, stale docs — ending in one recommended next action. |
 | `/sync` | Fetch, merge main into the branch, resolve conflicts — auto only when intent is unambiguous, ask otherwise. |
+| `qa-retro` | The internal counterpart to `learn-from-pr`: reads the findings `qa` records in `qa-findings.md`, clusters what recurs across two or more milestones, and proposes rules using `learn-from-pr`'s classification rather than its own. Stops below two milestones; confirms per rule; the report stands on its own if the user declines. |
 | `learn-from-pr` | One PR's review comments → persistent rules, at the right scope: project-specific to `CLAUDE.md`/`ARCHITECTURE.md`, generic to user-level skills. |
 | `backfill-pr-rules` | Same, batched over historical PRs. A pattern recurring across several PRs is treated as definitively generic. |
 | `setup-loop` | Onboards an existing repo: surveys what is there, reports the missing artifacts, then sets them up in dependency order by delegating to each owning skill. Never overwrites, never invents content. |

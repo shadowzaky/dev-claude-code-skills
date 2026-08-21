@@ -1,7 +1,7 @@
 # Business Rules
 
-> Last updated: 2026-08-19
-> Updated by: QA pass on Game-Dev Flavor
+> Last updated: 2026-08-20
+> Updated by: QA pass on QA Retro
 
 Invariants this plugin must enforce regardless of how any individual skill is written.
 
@@ -15,14 +15,15 @@ reviewer knows to look.
 ## Flavor system
 
 ### BR-001: Flavor activation is always explicit
-**Rule:** A flavor applies only when the project's `ARCHITECTURE.md` header block contains `> Flavor: <name>`. Nothing else activates a flavor — not repository contents, not file extensions, not inference.
+**Rule:** A flavor applies only when the project's `ARCHITECTURE.md` header block contains `> Flavor: <name>` or `> Flavor: <name>@<plugin>`, with the key spelled `Flavor` exactly. Nothing else activates a flavor — not repository contents, not file extensions, not inference.
 **Rationale:** A repo that behaves differently with nothing in the tree explaining why is undebuggable. Detection may suggest; only a committed line decides. (ADR-0001)
 **Validated by:** manual — `architecture` skill Step 1.9 states suggest-only; no code path performs detection.
 
+
 ### BR-002: An unresolvable flavor marker stops the run
-**Rule:** When `ARCHITECTURE.md` names a flavor with no matching `flavor-<name>` skill, the invoking skill stops and reports the bad marker. It never falls back to core defaults.
+**Rule:** When `ARCHITECTURE.md` names a flavor and neither candidate resolves — `flavor-<name>`, nor `<plugin>:flavor` for the `@` form — the invoking skill stops and reports the bad marker. It never falls back to core defaults.
 **Rationale:** Silently ignoring a marker produces a run that looks flavored and is not — the failure surfaces later as work that skipped every domain check. (ADR-0001)
-**Validated by:** `scripts/validate.js` — marker resolution check on this repo's own `ARCHITECTURE.md`; skill-side behaviour is **manual** (hook text in `dev`, `qa`, `/review-branch`).
+**Validated by:** `scripts/validate.js` for the bare form on this repo's own `ARCHITECTURE.md`; skill-side behaviour is **manual** (hook text in `dev`, `qa`, `milestones`, `architecture`, `/review-branch`). For the `@` form the validator **cannot** enforce this — it cannot see inside another plugin, so it warns and defers; only the runtime stop covers that case.
 
 ### BR-003: Project rules override flavor rules
 **Rule:** Where a flavor rule and the project's `ARCHITECTURE.md` disagree, `ARCHITECTURE.md` wins, and the skill applying the override states it once in its output.
@@ -43,6 +44,16 @@ reviewer knows to look.
 **Rule:** No flavor may let dev close a milestone, skip QA rule discovery, or make `ARCHITECTURE.md` optional. Flavors add; they never subtract.
 **Rationale:** The gates are what make the loop trustworthy. A domain layer that can switch one off makes every flavored project's guarantees unknowable.
 **Validated by:** manual — `flavor-game-dev` Rule 5; structurally, flavors expose only additive sections read by specific phases.
+
+### BR-011: The bare form resolves first, for both marker forms
+**Rule:** `<name>@<plugin>` resolves to `flavor-<name>` when that skill exists in this package, and falls through to `<plugin>:flavor` only when it does not. A marker naming a plugin can therefore be satisfied by an in-package skill of the same name.
+**Rationale:** It keeps the declaration stable while a flavor moves between the package and a plugin — packaging changes without the marker changing. The cost is that a stale in-package copy outranks the plugin one; that self-heals, since `postinstall` prunes skills it previously installed. (ADR-0001)
+**Validated by:** `scripts/validate.js` — resolution order. Negative-tested on a scratch copy: `game-dev@game-pack` resolved clean via `flavor-game-dev`, while `nope@ghost` fell through and reported `ghost:flavor`.
+
+### BR-012: A near-miss of the marker key is a hard stop
+**Rule:** A header key that is not exactly `Flavor` but is close to it — `Flavour:`, `flavor:`, `FLAVOR:`, `Flavor :` — is reported as a malformed marker. It is never treated as "no flavor declared".
+**Rationale:** This is the one failure the rest of the flavor system cannot catch. An unresolvable marker is loud; a *misspelled key* matches no marker at all, so the project reads as unflavored and every phase runs core defaults with nothing anywhere recording that a flavor was intended. (ADR-0001)
+**Validated by:** `scripts/validate.js` — near-miss detector over the header block, on this repo's own `ARCHITECTURE.md`; skill-side behaviour is **manual** (hook text in all five consumers). Negative-tested on a scratch copy: all four variants above error, while `Owner:`, `Version:`, `Status:`, `Flags:`, `Flow:`, `Layer:` and `Last updated:` stay clean, and a near-miss below the header block is correctly out of scope.
 
 ---
 
@@ -66,4 +77,56 @@ reviewer knows to look.
 ### BR-010: Every artifact has exactly one owning skill
 **Rule:** A skill that needs a change in another skill's artifact invokes the owner rather than writing the file itself.
 **Rationale:** Shared write access means no one is accountable for a file's shape, and two writers with different formats corrupt it slowly enough that nobody notices which pass did it.
-**Validated by:** manual — ownership table in `ARCHITECTURE.md` and `docs/artifacts.md`.
+**Validated by:** manual — ownership table in `ARCHITECTURE.md` and `docs/artifacts.md`. Worked instance: `/fix` proposes a business rule and hands it to `qa`'s rule-intake mode, which owns `BUSINESS_RULES.md` and assigns the `BR-XXX`.
+
+---
+
+## Bug path
+
+### BR-013: The bug path stays outside the milestone loop
+**Rule:** `/fix` never creates, activates, completes, or otherwise writes `MILESTONES.md`. Work that cannot be justified as a bug is refused and redirected to `/milestones`, naming which part of the feature-versus-bug test it failed.
+**Rationale:** The two failure modes are opposite and both real. Forcing a bug through the loop produces a milestone nobody planned, with criteria written after the fact to describe a patch; letting a feature through the bug path produces work with no criteria, no plan, and no record. Naming the failing test is what makes the refusal actionable rather than obstructive.
+**Validated by:** manual — `/fix` Step 1 and its Rules table. Not mechanically checkable: `validate.js` reads command prose but cannot execute it.
+
+### BR-014: A regression test is observed failing before the fix exists
+**Rule:** Every fix produces a regression test written against the *unfixed* code and run against it, failing for the reason the bug describes. The report states both the failing and the passing observation, quoting the failure output. A test that was not seen to fail is reported as such, never implied to have failed.
+**Rationale:** A test written after the fix proves only that the code does what it currently does — it will keep passing when the bug returns, which is the one moment it exists to catch. Requiring the failure to match the bug's reason blocks the near-miss where a test fails on a typo or bad fixture and is mistaken for a valid reproduction.
+**Validated by:** manual — `/fix` Steps 3 and 6, and the report format in Step 7 which has a dedicated line for both observations.
+
+---
+
+## Release notes
+
+### BR-015: A published release section is never rewritten
+**Rule:** Once a dated release section exists in `CHANGELOG.md`, `/release` never edits it — not to reword, not to add a milestone discovered later. Corrections go in the next release, stated as corrections. Re-running adds nothing for a milestone already recorded.
+**Rationale:** The same reasoning that makes an accepted ADR immutable. A release note is a record of what was announced; editing it desynchronises the file from what readers already have, and unlike an ADR there is no status field to show it changed. Idempotency follows from the same constraint — a regeneration that rewrites is a regeneration that corrupts.
+**Validated by:** manual — `/release` Step 6 and its Rules table.
+
+### BR-016: Release notes derive from specs, never from commit messages
+**Rule:** Entries are built from milestone goals, acceptance criteria, `BR-XXX` rules, and `docs/product/`. Git is consulted for release boundaries — tags and dates — and for nothing else. No commit message is restated.
+**Rationale:** A commit message describes how the code changed, for the people changing it. A changelog describes what the product does, for people who will never read the code. Deriving one from the other produces a file that serves neither, and it is the default failure mode of every generated changelog.
+**Validated by:** manual — `/release` Step 1 (explicit prohibition) and Step 4.
+
+### BR-017: An excluded milestone is reported with its reason
+**Rule:** Every completed or archived milestone left out of the changelog as not user-visible is named in the confirmation report, with the reason. Exclusion is never silent.
+**Rationale:** A missing milestone is indistinguishable from a bug in the generator. The exclusion list is also the part most likely to be wrong and the part invisible in the finished file, so it is shown before writing, while it can still be corrected.
+**Validated by:** manual — `/release` Step 3 and the exclusion table in Step 5, shown before the write gate.
+
+---
+
+## QA retro
+
+### BR-018: A pattern needs two milestones, named
+**Rule:** `qa-retro` proposes a rule only for a finding recurring across two or more milestones, and cites every milestone as evidence. Below the threshold it reports the near-miss and proposes nothing. With fewer than two milestones on record it stops entirely.
+**Rationale:** One occurrence is an incident, not a pattern, and a rule set that fills with rules built from single incidents stops being read — at which point the good rules stop working too. Naming the evidence is what lets a proposal be argued with instead of merely accepted.
+**Validated by:** manual — `qa-retro` Steps 1 and 3, and its Rules table.
+
+### BR-019: QA records findings on every pass, including clean ones
+**Rule:** `qa` Step 8b appends to `qa-findings.md` after every pass, using stable category slugs, and records `clean` when a pass found nothing. It runs ungated, whether or not the milestone is archived.
+**Rationale:** The Step 7 report is delivered into a conversation and lost, so nothing accumulates and no pattern can ever be seen. Clean passes matter as much as troubled ones: without them the file implies every milestone went badly, and the denominator that separates a real pattern from a coincidence is gone. Stable slugs are what make clustering possible — the same mistake described three ways reads as three problems.
+**Validated by:** manual — `qa` Step 8b. `qa-retro` depends on this rule holding; if it erodes, the retro silently has less to work from rather than failing loudly.
+
+### BR-020: One scope classification, shared not copied
+**Rule:** `qa-retro` applies `learn-from-pr` Step 3's classification by reference and does not restate it. Confirmed rules are written in `learn-from-pr`'s format to the targets it specifies.
+**Rationale:** Two copies of one classification drift, and then the same rule is filed in two different places by two skills that each believe they are right. This is `ARCHITECTURE.md`'s "restating another skill's rules instead of referencing them" applied to the case where it does the most damage.
+**Validated by:** manual — `qa-retro` Step 4, which states the prohibition explicitly. Not mechanically checkable; a future copy-paste would pass `npm test`.

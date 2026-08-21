@@ -46,6 +46,7 @@ npm uninstall claude-code-skills
 | `product-docs` | `/product-docs` | Create or update `docs/product/` in the target repo |
 | `create-skill` | `/create-skill` | Scaffold a new skill in this repo |
 | `flavor-game-dev` | marker | Game-dev layer over the loop — invoked by the marker, not typed |
+| `qa-retro` | `/qa-retro` | Cluster repeated QA failures into proposed rules — nothing written unconfirmed |
 | `learn-from-pr` | `/learn-from-pr` | Convert PR review comments into persistent rules |
 | `backfill-pr-rules` | `/backfill-pr-rules` | Batch-process historical PR comments into rules |
 
@@ -55,6 +56,8 @@ npm uninstall claude-code-skills
 |---------|-------------|
 | `/sprint` | Full PM → Dev → QA pipeline for a milestone |
 | `/grind` | Run Dev → QA on every incomplete milestone |
+| `/fix` | Fix a bug — reproduce, regression test, rule check — with no milestone |
+| `/release` | Generate `CHANGELOG.md` from completed milestones, in user-facing language |
 | `/ship` | Branch, commit, and open a PR with the body built from the specs |
 | `/status` | Report pipeline state and the next action (read-only) |
 | `/review-branch` | Review all changes on current branch vs master |
